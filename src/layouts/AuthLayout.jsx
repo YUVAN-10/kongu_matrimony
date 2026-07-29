@@ -11,7 +11,7 @@ export default function AuthLayout() {
         aria-hidden="true"
         className="pointer-events-none absolute -right-32 -bottom-32 size-96 rounded-full bg-secondary/20 blur-3xl"
       />
-      <div className="relative w-full">
+      <div className="relative flex w-full items-center justify-center">
         <Outlet />
       </div>
     </div>

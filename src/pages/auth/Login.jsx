@@ -41,7 +41,7 @@ export default function Login() {
   }
 
   return (
-    <div className="w-full max-w-md">
+    <div className="mx-auto w-full max-w-md">
       <div className="rounded-2xl border border-border/60 bg-card/95 p-8 shadow-2xl shadow-primary/5 backdrop-blur-sm sm:p-10">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10">
