@@ -1,0 +1,59 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.*
+
+# Dependency directories
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Firebase emulators and local tools
+.firebase/
+.firebaserc
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Lock files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# JetBrains
+*.iml
+out/
+
+# Misc
+*.csv
+*.sqlite
+*.db

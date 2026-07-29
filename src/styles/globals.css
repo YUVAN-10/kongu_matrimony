@@ -1,0 +1,117 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Matrimony Admin brand palette.
+  Primary/Secondary/Background/Text/Success/Error map directly to the design spec;
+  the remaining tokens (card, muted, accent, border...) are derived to stay
+  visually consistent with that palette across shadcn/ui components.
+*/
+:root {
+  --background: #fff8f2;
+  --foreground: #2d2d2d;
+
+  --card: #ffffff;
+  --card-foreground: #2d2d2d;
+  --popover: #ffffff;
+  --popover-foreground: #2d2d2d;
+
+  --primary: #c62828;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f9a825;
+  --secondary-foreground: #2d2d2d;
+
+  --muted: #f3e7da;
+  --muted-foreground: #8a7a6d;
+
+  --accent: #fdecc8;
+  --accent-foreground: #2d2d2d;
+
+  --destructive: #d32f2f;
+  --destructive-foreground: #ffffff;
+
+  --success: #2e7d32;
+  --success-foreground: #ffffff;
+
+  --border: #eadfd2;
+  --input: #eadfd2;
+  --ring: #c62828;
+
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: #1c1310;
+  --foreground: #f5e9dd;
+
+  --card: #241a16;
+  --card-foreground: #f5e9dd;
+  --popover: #241a16;
+  --popover-foreground: #f5e9dd;
+
+  --primary: #e15252;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f9a825;
+  --secondary-foreground: #1c1310;
+
+  --muted: #2e211c;
+  --muted-foreground: #b8a99c;
+
+  --accent: #3a2a22;
+  --accent-foreground: #f5e9dd;
+
+  --destructive: #ef5350;
+  --destructive-foreground: #ffffff;
+
+  --success: #4caf50;
+  --success-foreground: #0d1f0e;
+
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.15);
+  --ring: #e15252;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Cinzel', ui-serif, Georgia, serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}

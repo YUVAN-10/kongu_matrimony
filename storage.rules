@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isActiveAdmin() {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.status == 'active' &&
+        firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role in ['admin', 'super_admin'];
+    }
+
+    // Profile photos: readable by anyone with the (unguessable, token-bearing)
+    // download URL — matrimony profile photos need to be viewable from the
+    // future client-facing app too, which won't authenticate as an admin.
+    // Only active admins can upload or delete them.
+    match /profile-photos/{profileId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isActiveAdmin();
+    }
+
+    // Deny everything else by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
