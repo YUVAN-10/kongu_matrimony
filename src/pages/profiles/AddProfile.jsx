@@ -86,8 +86,8 @@ function NewUserForm({ onCreated, admin }) {
   async function onSubmit(data) {
     setSubmitError(null)
     try {
-      const uid = await createLinkedUser({ ...data, admin })
-      onCreated({ uid, ...data })
+      const { uid, profileId } = await createLinkedUser({ ...data, admin })
+      onCreated({ uid, profileId, ...data })
     } catch (error) {
       setSubmitError(error.message || 'Could not create user. Please try again.')
     }
@@ -183,7 +183,7 @@ export default function AddProfile() {
   const { currentAdmin } = useAuth()
   const navigate = useNavigate()
 
-  const [profileId] = useState(() => generateProfileId())
+  const [profileId, setProfileId] = useState(() => generateProfileId())
   const [linkMode, setLinkMode] = useState('existing')
   const [linkedUser, setLinkedUser] = useState(null)
   const [createdNewUser, setCreatedNewUser] = useState(false)
@@ -196,6 +196,10 @@ export default function AddProfile() {
   function handleNewUserCreated(user) {
     setLinkedUser(user)
     setCreatedNewUser(true)
+    // Use the profileId that was already created by createLinkedUser
+    if (user.profileId) {
+      setProfileId(user.profileId)
+    }
   }
 
   function handleSaved({ status }) {

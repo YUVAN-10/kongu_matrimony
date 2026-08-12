@@ -45,7 +45,6 @@ export default function ProfileTable({
   onPublish,
   onHide,
   onRestore,
-  onDelete,
 }) {
   const rangeStart = profiles.length === 0 ? 0 : (page - 1) * pageSize + 1
   const rangeEnd = (page - 1) * pageSize + profiles.length
@@ -182,7 +181,6 @@ export default function ProfileTable({
                         onPublish={onPublish}
                         onHide={onHide}
                         onRestore={onRestore}
-                        onDelete={onDelete}
                       />
                     </td>
                   </tr>

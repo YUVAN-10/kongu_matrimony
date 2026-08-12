@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import {
   subscribeToUsersPage,
   subscribeToUsersForSearch,
@@ -85,7 +86,15 @@ export function useUsers() {
     }
   }, [filters, isSearching])
 
+  const { loading: authLoading } = useAuth()
+
   useEffect(() => {
+    // Defer subscribing until AuthProvider has finished resolving.
+    if (authLoading) {
+      setLoading(true)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -134,7 +143,7 @@ export function useUsers() {
     }
 
     return () => unsubscribe && unsubscribe()
-  }, [filters, sortBy, pageSize, page, isSearching, searchTerm])
+  }, [filters, sortBy, pageSize, page, isSearching, searchTerm, authLoading])
 
   function updateFilters(patch) {
     setFilters((prev) => ({ ...prev, ...patch }))

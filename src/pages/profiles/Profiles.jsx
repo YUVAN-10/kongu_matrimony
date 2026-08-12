@@ -6,10 +6,9 @@ import ProfileSearch from '@/components/profiles/ProfileSearch'
 import ProfileFilters from '@/components/profiles/ProfileFilters'
 import ProfileTable from '@/components/profiles/ProfileTable'
 import ProfileCard from '@/components/profiles/ProfileCard'
-import DeleteProfileDialog from '@/components/profiles/DeleteProfileDialog'
 import { useProfiles } from '@/hooks/useProfiles'
 import { useAuth } from '@/hooks/useAuth'
-import { hideProfile, restoreProfile, softDeleteProfile } from '@/services/profileService'
+import { hideProfile, restoreProfile } from '@/services/profileService'
 
 export default function Profiles() {
   const { currentAdmin } = useAuth()
@@ -37,7 +36,7 @@ export default function Profiles() {
     setSortBy,
   } = useProfiles()
 
-  const [deleteTarget, setDeleteTarget] = useState(null)
+
   const successMessage = location.state?.successMessage
 
   function goToView(profileId) {
@@ -53,9 +52,7 @@ export default function Profiles() {
   async function handleRestore(profile) {
     await restoreProfile(profile.id, { admin: currentAdmin })
   }
-  async function handleDeleteConfirm() {
-    await softDeleteProfile(deleteTarget.id, { admin: currentAdmin })
-  }
+
 
   return (
     <div className="space-y-4">
@@ -94,7 +91,25 @@ export default function Profiles() {
           className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <span>Couldn&apos;t load profiles. Check your connection and try again.</span>
+          <div>
+            {error?.indexUrl ? (
+              <>
+                <div>Couldn&apos;t load profiles due to a missing Firestore index.</div>
+                <div className="mt-1">
+                  <a
+                    href={error.indexUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Create the required index in Firebase Console
+                  </a>
+                </div>
+              </>
+            ) : (
+              <span>Couldn&apos;t load profiles. Check your connection and try again.</span>
+            )}
+          </div>
         </div>
       )}
 
@@ -116,7 +131,6 @@ export default function Profiles() {
         onPublish={(profile) => goToEdit(profile.id)}
         onHide={handleHide}
         onRestore={handleRestore}
-        onDelete={setDeleteTarget}
       />
 
       <ProfileCard
@@ -131,15 +145,9 @@ export default function Profiles() {
         onPublish={(profile) => goToEdit(profile.id)}
         onHide={handleHide}
         onRestore={handleRestore}
-        onDelete={setDeleteTarget}
       />
 
-      <DeleteProfileDialog
-        profile={deleteTarget}
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
-      />
+
     </div>
   )
 }

@@ -1,19 +1,17 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { CircleAlert, Download, FileSpreadsheet } from 'lucide-react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { CheckCircle2, CircleAlert, Download, FileSpreadsheet, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import SearchBar from '@/components/users/SearchBar'
 import UserFilters from '@/components/users/UserFilters'
 import UserTable from '@/components/users/UserTable'
 import BlockUserDialog from '@/components/users/BlockUserDialog'
-import DeleteUserDialog from '@/components/users/DeleteUserDialog'
 import UserDetails from '@/pages/users/UserDetails'
 import { useUsers } from '@/hooks/useUsers'
 import { useAuth } from '@/hooks/useAuth'
 import {
   blockUser,
   unblockUser,
-  softDeleteUser,
   exportUsersToCsv,
   exportUsersToExcel,
 } from '@/services/userService'
@@ -21,6 +19,7 @@ import {
 export default function Users() {
   const { currentAdmin } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const { userId: routeUserId } = useParams()
 
   const {
@@ -45,7 +44,7 @@ export default function Users() {
   } = useUsers()
 
   const [blockTarget, setBlockTarget] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
+  const successMessage = location.state?.successMessage
 
   function openDetails(userId) {
     navigate(`/users/${userId}`)
@@ -63,9 +62,7 @@ export default function Users() {
     await unblockUser(user.id, { admin: currentAdmin })
   }
 
-  async function handleDeleteConfirm() {
-    await softDeleteUser(deleteTarget.id, { admin: currentAdmin })
-  }
+
 
   return (
     <div className="space-y-4">
@@ -99,8 +96,24 @@ export default function Users() {
             <FileSpreadsheet className="size-4" aria-hidden="true" />
             Excel
           </Button>
+          <Button asChild size="sm" className="gap-1.5">
+            <Link to="/users/add">
+              <Plus className="size-4" aria-hidden="true" />
+              Add User
+            </Link>
+          </Button>
         </div>
       </div>
+
+      {successMessage && (
+        <div
+          role="status"
+          className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/10 px-4 py-3 text-sm text-success"
+        >
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{successMessage}</span>
+        </div>
+      )}
 
       <UserFilters filters={filters} onChange={updateFilters} onReset={resetFilters} />
 
@@ -110,7 +123,25 @@ export default function Users() {
           className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <span>Couldn&apos;t load users. Check your connection and try again.</span>
+          <div>
+            {error?.indexUrl ? (
+              <>
+                <div>Couldn&apos;t load users due to a missing Firestore index.</div>
+                <div className="mt-1">
+                  <a
+                    href={error.indexUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Create the required index in Firebase Console
+                  </a>
+                </div>
+              </>
+            ) : (
+              <span>Couldn&apos;t load users. Check your connection and try again.</span>
+            )}
+          </div>
         </div>
       )}
 
@@ -128,10 +159,9 @@ export default function Users() {
         onNextPage={goToNextPage}
         onPreviousPage={goToPreviousPage}
         onView={openDetails}
-        onEdit={openDetails}
+        onEdit={(userId) => navigate(`/users/${userId}/edit`)}
         onBlock={setBlockTarget}
         onUnblock={handleUnblock}
-        onDelete={setDeleteTarget}
       />
 
       <UserDetails
@@ -147,12 +177,7 @@ export default function Users() {
         onConfirm={handleBlockConfirm}
       />
 
-      <DeleteUserDialog
-        user={deleteTarget}
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
-      />
+
     </div>
   )
 }

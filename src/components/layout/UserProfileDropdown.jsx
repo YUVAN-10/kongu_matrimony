@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronDown, LogOut, Settings as SettingsIcon } from 'lucide-react'
+import { ChevronDown, LogOut } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,13 +49,7 @@ export default function UserProfileDropdown() {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild className="cursor-pointer">
-          <Link to="/settings">
-            <SettingsIcon className="size-4" aria-hidden="true" />
-            Settings
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        
         <DropdownMenuItem
           onClick={handleLogout}
           className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"

@@ -145,23 +145,53 @@ export async function getUserById(userId) {
 const USER_PICKER_SEARCH_CAP = 50
 
 export async function searchUsersOnce(term) {
-  const trimmed = term.trim().toLowerCase()
+  const trimmed = term.trim()
   if (!trimmed) return []
 
   const usersQuery = query(
     collection(db, USERS_COLLECTION),
     where('status', 'in', ['active', 'blocked']),
-    orderBy('createdAt', 'desc'),
+    orderBy('name'),
+    where('name', '>=', trimmed),
+    where('name', '<=', trimmed + '\uf8ff'),
     limit(USER_PICKER_SEARCH_CAP)
   )
   const snapshot = await getDocs(usersQuery)
-  const users = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+}
 
-  return users.filter((user) =>
-    [user.name, user.phone, user.email, user.id].some((field) =>
-      String(field || '').toLowerCase().includes(trimmed)
-    )
+/**
+ * Check if a user with the given phone number already exists
+ * Used for duplicate checking during user creation
+ */
+export async function searchUsersByPhone(phone) {
+  if (!phone?.trim()) return []
+  
+  const phoneQuery = query(
+    collection(db, USERS_COLLECTION),
+    where('phone', '==', phone.trim()),
+    where('status', 'in', ['active', 'blocked']),
+    limit(1)
   )
+  const snapshot = await getDocs(phoneQuery)
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+}
+
+/**
+ * Check if a user with the given email already exists
+ * Used for duplicate checking during user creation
+ */
+export async function searchUsersByEmail(email) {
+  if (!email?.trim()) return []
+  
+  const emailQuery = query(
+    collection(db, USERS_COLLECTION),
+    where('email', '==', email.trim().toLowerCase()),
+    where('status', 'in', ['active', 'blocked']),
+    limit(1)
+  )
+  const snapshot = await getDocs(emailQuery)
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
 }
 
 /**
@@ -169,13 +199,14 @@ export async function searchUsersOnce(term) {
  * from the Add Profile page. The Firebase Auth user itself is created
  * separately via authService.createUserAccount (which returns this uid).
  */
-export async function createUserDocument(uid, { name, email, phone, gender, admin }) {
+export async function createUserDocument(uid, { name, email, phone, gender, city, admin }) {
   const adminLabel = admin?.name || admin?.email || 'Admin'
   await setDoc(doc(db, USERS_COLLECTION, uid), {
     name,
     email,
     phone,
     gender,
+    ...(city?.trim() && { city: city.trim() }),
     status: 'active',
     isPremium: false,
     createdBy: adminLabel,
@@ -188,7 +219,30 @@ export async function createUserDocument(uid, { name, email, phone, gender, admi
     targetType: 'user',
     targetId: uid,
     description: `Created user "${name}"`,
-    newData: { name, email, phone, gender },
+    newData: { name, email, phone, gender, city },
+    admin,
+  })
+}
+
+export async function updateUser(userId, data, { admin } = {}) {
+  const payload = {
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    gender: data.gender,
+    city: data.city || null,
+    updatedAt: serverTimestamp(),
+  }
+
+  await updateDoc(doc(db, USERS_COLLECTION, userId), payload)
+
+  logActivity({
+    action: 'update',
+    module: 'Users',
+    targetType: 'user',
+    targetId: userId,
+    description: `Updated user "${data.name || userId}"`,
+    newData: payload,
     admin,
   })
 }

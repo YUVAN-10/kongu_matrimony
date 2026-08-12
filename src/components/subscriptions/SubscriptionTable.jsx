@@ -20,7 +20,6 @@ export default function SubscriptionTable({
   onEdit,
   onActivate,
   onDeactivate,
-  onDelete,
 }) {
   return (
     <Card className="animate-in fade-in hidden border-border/70 shadow-sm duration-500 md:block">
@@ -85,7 +84,6 @@ export default function SubscriptionTable({
                       onEdit={onEdit}
                       onActivate={onActivate}
                       onDeactivate={onDeactivate}
-                      onDelete={onDelete}
                     />
                   </td>
                 </tr>

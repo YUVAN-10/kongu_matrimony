@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import {
   Ban,
   CalendarX,
@@ -6,6 +7,7 @@ import {
   Crown,
   Eye,
   EyeOff,
+  FileEdit,
   Mars,
   UserPlus,
   UserRound,
@@ -84,6 +86,13 @@ export default function Dashboard() {
       icon: UserPlus,
       accent: 'primary',
     },
+    {
+      title: 'Draft Profiles',
+      value: stats.draftProfiles,
+      subtitle: stats.totalProfiles === 0 ? NO_DATA : 'incomplete profiles',
+      icon: FileEdit,
+      accent: 'secondary',
+    },
   ]
 
   const secondaryStats = [
@@ -158,9 +167,15 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-6">
-        {primaryStats.map((stat) => (
-          <StatCard key={stat.title} {...stat} loading={loading} />
-        ))}
+        {primaryStats.map((stat) => 
+          stat.title === 'Draft Profiles' ? (
+            <Link key={stat.title} to="/profiles/drafts" className="block">
+              <StatCard {...stat} loading={loading} />
+            </Link>
+          ) : (
+            <StatCard key={stat.title} {...stat} loading={loading} />
+          )
+        )}
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-6">

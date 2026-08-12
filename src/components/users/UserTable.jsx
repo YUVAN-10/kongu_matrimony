@@ -18,7 +18,7 @@ const SORT_OPTIONS = [
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 
-const COLUMN_COUNT = 11
+const COLUMN_COUNT = 10
 
 export default function UserTable({
   users,
@@ -37,7 +37,6 @@ export default function UserTable({
   onEdit,
   onBlock,
   onUnblock,
-  onDelete,
 }) {
   const rangeStart = users.length === 0 ? 0 : (page - 1) * pageSize + 1
   const rangeEnd = (page - 1) * pageSize + users.length
@@ -65,7 +64,6 @@ export default function UserTable({
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
               <th className="px-4 py-3 font-medium">Photo</th>
-              <th className="px-4 py-3 font-medium">User ID</th>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Phone</th>
               <th className="px-4 py-3 font-medium">Email</th>
@@ -104,9 +102,6 @@ export default function UserTable({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground" title={user.id}>
-                    {user.id.slice(0, 8)}…
-                  </td>
                   <td className="px-4 py-3 font-medium text-foreground">{user.name || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{user.phone || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{user.email || '—'}</td>
@@ -137,7 +132,6 @@ export default function UserTable({
                       onEdit={onEdit}
                       onBlock={onBlock}
                       onUnblock={onUnblock}
-                      onDelete={onDelete}
                     />
                   </td>
                 </tr>

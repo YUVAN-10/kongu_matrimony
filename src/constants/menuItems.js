@@ -5,7 +5,6 @@ import {
   Gem,
   FileStack,
   CreditCard,
-  Settings,
   ScrollText,
 } from 'lucide-react'
 
@@ -22,6 +21,7 @@ export const menuSections = [
     items: [
       { title: 'Users', icon: Users, path: '/users' },
       { title: 'Profiles', icon: NotebookText, path: '/profiles' },
+      { title: 'Draft Profiles', icon: NotebookText, path: '/profiles/drafts' },
     ],
   },
   {
@@ -35,7 +35,6 @@ export const menuSections = [
   {
     section: 'System',
     items: [
-      { title: 'Settings', icon: Settings, path: '/settings' },
       { title: 'Activity Logs', icon: ScrollText, path: '/activity-logs' },
     ],
   },

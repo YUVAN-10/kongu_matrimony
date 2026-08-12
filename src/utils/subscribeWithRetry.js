@@ -35,6 +35,13 @@ export function subscribeWithRetry(subscribeFn, onData, onError, maxRetries = MA
   let attempt = 0
   let cancelled = false
 
+  // Exponential-ish backoff (in ms) with a small base delay to allow
+  // the underlying Firestore channel to warm up on initial app start.
+  function backoffDelay(attemptNum) {
+    const base = 120
+    return base * Math.pow(2, Math.max(0, attemptNum - 1))
+  }
+
   function start() {
     unsubscribe = subscribeFn(
       (...args) => {
@@ -47,8 +54,25 @@ export function subscribeWithRetry(subscribeFn, onData, onError, maxRetries = MA
         if (attempt < maxRetries) {
           attempt += 1
           unsubscribe()
-          start()
+          const delay = backoffDelay(attempt)
+          setTimeout(() => start(), delay)
           return
+        }
+        // Extract a Firestore composite-index creation URL when present
+        try {
+          const msg = String(err?.message || err)
+          const match = msg.match(/https?:\/\/console\.firebase\.google\.com\S*/i)
+          if (match) {
+            try {
+              // attach a friendly property for callers
+              err.indexUrl = match[0]
+            } catch (e) {
+              // ignore if err is non-writable
+            }
+          }
+          console.error('[subscribeWithRetry] listener failed after retries:', err)
+        } catch (e) {
+          // ignore console errors in unusual environments
         }
         onError(err)
       }

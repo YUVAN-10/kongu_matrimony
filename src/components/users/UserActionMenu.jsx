@@ -1,4 +1,4 @@
-import { Ban, Eye, MoreVertical, Pencil, ShieldCheck, Trash2 } from 'lucide-react'
+import { Ban, Eye, MoreVertical, Pencil, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export default function UserActionMenu({ user, onView, onEdit, onBlock, onUnblock, onDelete }) {
+export default function UserActionMenu({ user, onView, onEdit, onBlock, onUnblock }) {
   const isBlocked = user.status === 'blocked'
 
   return (
@@ -44,13 +44,7 @@ export default function UserActionMenu({ user, onView, onEdit, onBlock, onUnbloc
             Block
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem
-          onClick={() => onDelete(user)}
-          className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-          Delete
-        </DropdownMenuItem>
+
       </DropdownMenuContent>
     </DropdownMenu>
   )

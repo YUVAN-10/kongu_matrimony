@@ -1,4 +1,4 @@
-import { Eye, MoreVertical, Pencil, PowerOff, Power, Trash2 } from 'lucide-react'
+import { Eye, MoreVertical, Pencil, PowerOff, Power } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export default function SubscriptionActionMenu({ plan, onView, onEdit, onActivate, onDeactivate, onDelete }) {
+export default function SubscriptionActionMenu({ plan, onView, onEdit, onActivate, onDeactivate }) {
   const isActive = plan.status === 'active'
 
   return (
@@ -39,13 +39,7 @@ export default function SubscriptionActionMenu({ plan, onView, onEdit, onActivat
             Activate
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem
-          onClick={() => onDelete(plan)}
-          className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-          Delete
-        </DropdownMenuItem>
+
       </DropdownMenuContent>
     </DropdownMenu>
   )

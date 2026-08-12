@@ -6,10 +6,9 @@ import SubscriptionFilters from '@/components/subscriptions/SubscriptionFilters'
 import SubscriptionTable from '@/components/subscriptions/SubscriptionTable'
 import SubscriptionCard from '@/components/subscriptions/SubscriptionCard'
 import DeactivatePlanDialog from '@/components/subscriptions/DeactivatePlanDialog'
-import DeletePlanDialog from '@/components/subscriptions/DeletePlanDialog'
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans'
 import { useAuth } from '@/hooks/useAuth'
-import { activatePlan, deactivatePlan, deleteSubscriptionPlan } from '@/services/subscriptionService'
+import { activatePlan, deactivatePlan } from '@/services/subscriptionService'
 import { DEFAULT_PREMIUM_PLAN } from '@/constants/subscriptionOptions'
 
 export default function SubscriptionPlans() {
@@ -31,7 +30,6 @@ export default function SubscriptionPlans() {
   } = useSubscriptionPlans()
 
   const [deactivateTarget, setDeactivateTarget] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
 
   function goToView(planId) {
     navigate(`/subscription-plans/${planId}`)
@@ -45,9 +43,7 @@ export default function SubscriptionPlans() {
   async function handleDeactivateConfirm() {
     await deactivatePlan(deactivateTarget.id, { admin: currentAdmin })
   }
-  async function handleDeleteConfirm() {
-    await deleteSubscriptionPlan(deleteTarget.id, { admin: currentAdmin })
-  }
+
 
   function resetFilters() {
     setSearchTerm('')
@@ -138,7 +134,6 @@ export default function SubscriptionPlans() {
             onEdit={goToEdit}
             onActivate={handleActivate}
             onDeactivate={setDeactivateTarget}
-            onDelete={setDeleteTarget}
           />
 
           <SubscriptionCard
@@ -149,7 +144,6 @@ export default function SubscriptionPlans() {
             onEdit={goToEdit}
             onActivate={handleActivate}
             onDeactivate={setDeactivateTarget}
-            onDelete={setDeleteTarget}
           />
         </>
       )}
@@ -161,12 +155,7 @@ export default function SubscriptionPlans() {
         onConfirm={handleDeactivateConfirm}
       />
 
-      <DeletePlanDialog
-        plan={deleteTarget}
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
-      />
+
     </div>
   )
 }

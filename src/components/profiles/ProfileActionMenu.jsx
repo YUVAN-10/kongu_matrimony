@@ -1,4 +1,4 @@
-import { Eye, EyeOff, MoreVertical, Pencil, RotateCcw, Send, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, MoreVertical, Pencil, RotateCcw, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export default function ProfileActionMenu({ profile, onView, onEdit, onPublish, onHide, onRestore, onDelete }) {
+export default function ProfileActionMenu({ profile, onView, onEdit, onPublish, onHide, onRestore }) {
   const status = profile.system?.status
 
   return (
@@ -55,13 +55,7 @@ export default function ProfileActionMenu({ profile, onView, onEdit, onPublish, 
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuItem
-          onClick={() => onDelete(profile)}
-          className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
-        >
-          <Trash2 className="size-4" aria-hidden="true" />
-          Delete
-        </DropdownMenuItem>
+
       </DropdownMenuContent>
     </DropdownMenu>
   )

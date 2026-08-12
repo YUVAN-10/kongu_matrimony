@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import {
   subscribeToProfilesPage,
   subscribeToProfilesForSearch,
@@ -26,6 +27,11 @@ function sortProfilesClientSide(profiles, sortBy) {
       return sorted.sort(
         (a, b) =>
           (toDate(a.system?.createdAt)?.getTime() || 0) - (toDate(b.system?.createdAt)?.getTime() || 0)
+      )
+    case 'lastUpdated':
+      return sorted.sort(
+        (a, b) =>
+          (toDate(b.system?.updatedAt)?.getTime() || 0) - (toDate(a.system?.updatedAt)?.getTime() || 0)
       )
     case 'name_asc':
       return sorted.sort((a, b) => (a.personal?.fullName || '').localeCompare(b.personal?.fullName || ''))
@@ -85,7 +91,15 @@ export function useProfiles() {
     }
   }, [filters, isSearching])
 
+  const { loading: authLoading } = useAuth()
+
   useEffect(() => {
+    // Wait for auth to resolve before attempting Firestore subscriptions.
+    if (authLoading) {
+      setLoading(true)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -131,7 +145,7 @@ export function useProfiles() {
     }
 
     return () => unsubscribe && unsubscribe()
-  }, [filters, sortBy, pageSize, page, isSearching, searchTerm])
+  }, [filters, sortBy, pageSize, page, isSearching, searchTerm, authLoading])
 
   function updateFilters(patch) {
     setFilters((prev) => ({ ...prev, ...patch }))

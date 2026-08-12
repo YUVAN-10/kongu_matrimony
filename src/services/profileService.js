@@ -71,6 +71,8 @@ function buildSortConstraint(filters, sortBy) {
   switch (sortBy) {
     case 'oldest':
       return orderBy('system.createdAt', 'asc')
+    case 'lastUpdated':
+      return orderBy('system.updatedAt', 'desc')
     case 'name_asc':
       return orderBy('personal.fullName', 'asc')
     case 'name_desc':
@@ -132,6 +134,17 @@ export async function getProfileById(profileId) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null
 }
 
+export async function getProfileByUserId(userId) {
+  if (!userId) return null
+  const q = query(collection(db, PROFILES_COLLECTION), where('userId', '==', userId), limit(1))
+  const snapshot = await getDocs(q)
+  if (snapshot.empty) {
+    return null
+  }
+  const profileDoc = snapshot.docs[0]
+  return { id: profileDoc.id, ...profileDoc.data() }
+}
+
 /**
  * One-time (non-realtime) capped search across name/phone/email, used by
  * Assign Subscription's profile picker — a lookup, not a live list. Mirrors
@@ -141,9 +154,15 @@ export async function getProfileById(profileId) {
  */
 const PROFILE_PICKER_SEARCH_CAP = 50
 
+function normalizeSearch(str) {
+  return String(str || '').replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
 export async function searchProfilesOnce(term) {
-  const trimmed = term.trim().toLowerCase()
+  const trimmed = normalizeSearch(term)
   if (!trimmed) return []
+
+  const searchWords = trimmed.split(' ')
 
   const profilesQuery = query(
     collection(db, PROFILES_COLLECTION),
@@ -154,11 +173,17 @@ export async function searchProfilesOnce(term) {
   const snapshot = await getDocs(profilesQuery)
   const profiles = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
 
-  return profiles.filter((profile) =>
-    [profile.personal?.fullName, profile.personal?.mobileNumber, profile.personal?.email, profile.id].some(
-      (field) => String(field || '').toLowerCase().includes(trimmed)
-    )
-  )
+  return profiles.filter((profile) => {
+    const haystack = [
+      profile.personal?.fullName,
+      profile.personal?.mobileNumber,
+      profile.personal?.email,
+      profile.id,
+    ]
+      .map((field) => normalizeSearch(field))
+      .join(' ')
+    return searchWords.every((word) => haystack.includes(word))
+  })
 }
 
 /**
@@ -302,15 +327,66 @@ export async function softDeleteProfile(profileId, { admin }) {
 }
 
 /**
- * Orchestrates the Add Profile "Create New User" path: creates the Firebase
- * Auth account (via a secondary app instance — see authService), then the
- * matching Firestore users/{uid} document. Returns the new uid so the
- * caller can link it to the profile being built. Does not create the
- * profile itself — that happens through the normal saveDraft/publishProfile
- * calls once the rest of the form is filled in.
+ * Orchestrates the Add User flow: creates the Firebase Auth account, 
+ * then the matching Firestore users/{uid} document, and AUTOMATICALLY
+ * creates a draft profile linked to this user. Returns the new uid.
  */
-export async function createLinkedUser({ name, email, phone, tempPassword, gender, admin }) {
+export async function createLinkedUser({ name, email, phone, tempPassword, gender, city, admin }) {
+  // 1. Create Firebase Auth user and get UID
   const uid = await createUserAccount({ email, password: tempPassword })
-  await createUserDocument(uid, { name, email, phone, gender, admin })
-  return uid
+  
+  // 2. Create users/{uid} document
+  await createUserDocument(uid, { name, email, phone, gender, city, admin })
+  
+  // 3. Check if profile already exists for this user (idempotency check)
+  console.log(`[ProfileService] Checking existing profile for user: ${uid}`)
+  const existingProfile = await getProfileByUserId(uid)
+  
+  if (existingProfile) {
+    console.log(`[ProfileService] Existing profile found: ${existingProfile.id}`)
+    return { uid, profileId: existingProfile.id }
+  }
+  
+  // 4. No existing profile - create exactly one draft profile linked to this user
+  console.log(`[ProfileService] No profile found. Creating profile.`)
+  const profileId = generateProfileId()
+  const adminLabel = admin?.name || admin?.email || 'Admin'
+  
+  const draftProfileData = {
+    userId: uid, // Link profile to user via UID
+    personal: {
+      fullName: name, // Copy user's name into profile
+      email: email,
+      mobileNumber: phone,
+      gender: gender
+    },
+    address: {
+      city: city || ''
+    },
+    system: {
+      status: 'draft',
+      userId: uid,
+      createdBy: adminLabel,
+      createdAt: serverTimestamp(),
+      draftSavedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      subscriptionStatus: 'free',
+      blocked: false
+    }
+  }
+  
+  await setDoc(doc(db, PROFILES_COLLECTION, profileId), removeUndefined(draftProfileData))
+  
+  console.log(`[ProfileService] Profile created: ${profileId}`)
+  logActivity({
+    action: 'create',
+    module: 'Profiles',
+    targetType: 'profile',
+    targetId: profileId,
+    description: `Automatically created draft profile "${name}" for new user`,
+    newData: { userId: uid, profileId, status: 'draft' },
+    admin
+  })
+  
+  return { uid, profileId }
 }

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Download, Gem, Settings, UserPlus, UserRoundPlus } from 'lucide-react'
+import { Download, Gem, UserPlus, UserRoundPlus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
 // Each action links to the existing page where that workflow will live once
@@ -9,7 +9,6 @@ const ACTIONS = [
   { label: 'Add User', icon: UserPlus, to: '/users' },
   { label: 'Create Subscription', icon: Gem, to: '/subscription-plans' },
   { label: 'Export Users', icon: Download, to: '/users' },
-  { label: 'Settings', icon: Settings, to: '/settings' },
 ]
 
 export default function QuickActions() {

@@ -102,6 +102,7 @@ export function useDashboardData() {
       femaleProfiles: profiles.data.filter((profile) => profile.personal?.gender === 'female').length,
       activeProfiles: profiles.data.filter((profile) => profile.system?.status === 'active').length,
       hiddenProfiles: profiles.data.filter((profile) => profile.system?.status === 'hidden').length,
+      draftProfiles: profiles.data.filter((profile) => profile.system?.status === 'draft').length,
       expiringSubscriptions: subscriptions.data.filter(
         (sub) => sub.expiryDate && isWithinNextDays(sub.expiryDate, EXPIRING_WINDOW_DAYS)
       ).length,
