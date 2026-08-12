@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import EmptyState from '@/components/common/EmptyState'
 import ProfileStatusBadge from '@/components/profiles/ProfileStatusBadge'
 import ProfileActionMenu from '@/components/profiles/ProfileActionMenu'
-import { calculateAge, formatDate } from '@/utils/helpers'
+import { calculateAge } from '@/utils/helpers'
 import { cn } from '@/lib/utils'
 
 const SORT_OPTIONS = [
@@ -17,7 +17,7 @@ const SORT_OPTIONS = [
 ]
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
-const COLUMN_COUNT = 13
+const COLUMN_COUNT = 9
 
 const ROW_TINT = {
   draft: 'bg-secondary/5',
@@ -72,17 +72,13 @@ export default function ProfileTable({
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
               <th className="px-4 py-3 font-medium">Photo</th>
-              <th className="px-4 py-3 font-medium">Profile ID</th>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Gender</th>
               <th className="px-4 py-3 font-medium">Age</th>
               <th className="px-4 py-3 font-medium">City</th>
-              <th className="px-4 py-3 font-medium">Religion</th>
               <th className="px-4 py-3 font-medium">Occupation</th>
               <th className="px-4 py-3 font-medium">Subscription</th>
-              <th className="px-4 py-3 font-medium">Created By</th>
               <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Created Date</th>
               <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
@@ -130,12 +126,6 @@ export default function ProfileTable({
                         )}
                       </div>
                     </td>
-                    <td
-                      className="px-4 py-3 font-mono text-xs text-muted-foreground"
-                      title={profile.id}
-                    >
-                      {profile.id.slice(0, 8)}…
-                    </td>
                     <td className="px-4 py-3 font-medium text-foreground">
                       {profile.personal?.fullName || '—'}
                     </td>
@@ -145,9 +135,6 @@ export default function ProfileTable({
                     <td className="px-4 py-3 text-muted-foreground">{age ?? '—'}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {profile.address?.city || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {profile.personal?.religion || '—'}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {profile.occupation?.jobTitle || '—'}
@@ -164,14 +151,8 @@ export default function ProfileTable({
                         {profile.system?.subscriptionStatus === 'premium' ? 'Premium' : 'Free'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {profile.system?.createdBy || '—'}
-                    </td>
                     <td className="px-4 py-3">
                       <ProfileStatusBadge status={status} />
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(profile.system?.createdAt)}
                     </td>
                     <td className="px-4 py-3">
                       <ProfileActionMenu

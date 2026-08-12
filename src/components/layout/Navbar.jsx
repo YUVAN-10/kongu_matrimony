@@ -1,8 +1,9 @@
 import { useLocation } from 'react-router-dom'
-import { Bell, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Breadcrumb from '@/components/layout/Breadcrumb'
 import UserProfileDropdown from '@/components/layout/UserProfileDropdown'
+import NotificationBell from '@/components/layout/NotificationBell'
 import { getPageTitle } from '@/constants/menuItems'
 
 export default function Navbar({ onMenuClick }) {
@@ -32,20 +33,7 @@ export default function Navbar({ onMenuClick }) {
       </div>
 
       <div className="flex items-center gap-1.5">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="relative hover:bg-primary/5"
-          aria-label="Notifications"
-        >
-          <Bell className="size-5" aria-hidden="true" />
-          <span
-            className="absolute top-2 right-2 size-2 rounded-full bg-primary"
-            aria-hidden="true"
-          />
-        </Button>
-
+        <NotificationBell />
         <UserProfileDropdown />
       </div>
     </header>

@@ -1,27 +1,9 @@
 import { Link } from 'react-router-dom'
-import {
-  Ban,
-  CalendarX,
-  CircleAlert,
-  Clock,
-  Crown,
-  Eye,
-  EyeOff,
-  FileEdit,
-  Mars,
-  UserPlus,
-  UserRound,
-  Users,
-  Venus,
-  Wallet,
-} from 'lucide-react'
+import { CircleAlert, ClipboardCheck, Crown, UserCheck, UserPlus, UserRound, Users, Wallet } from 'lucide-react'
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import StatCard from '@/components/dashboard/StatCard'
-import QuickActions from '@/components/dashboard/QuickActions'
 import RecentActivity from '@/components/dashboard/RecentActivity'
 import SystemStatusWidget from '@/components/dashboard/SystemStatusWidget'
-import RecentProfilesTable from '@/components/dashboard/RecentProfilesTable'
-import RecentPaymentsTable from '@/components/dashboard/RecentPaymentsTable'
 import RegistrationChart from '@/components/dashboard/Charts/RegistrationChart'
 import RevenueChart from '@/components/dashboard/Charts/RevenueChart'
 import GenderPieChart from '@/components/dashboard/Charts/GenderPieChart'
@@ -31,9 +13,14 @@ import { formatCurrency, toPercent } from '@/utils/helpers'
 
 const NO_DATA = 'No data available'
 
+// Stat cards that link elsewhere instead of just displaying a number.
+const PRIMARY_STAT_LINKS = {
+  'New Profile Approvals': '/profiles/new-approvals',
+  'Pending Profile Changes': '/profiles/change-approvals',
+}
+
 export default function Dashboard() {
-  const { loading, error, stats, charts, recentProfiles, recentPayments, recentActivity } =
-    useDashboardData()
+  const { loading, error, stats, charts, recentActivity } = useDashboardData()
 
   const primaryStats = [
     {
@@ -61,18 +48,6 @@ export default function Dashboard() {
       accent: 'secondary',
     },
     {
-      title: 'Blocked Users',
-      value: stats.blockedUsers,
-      subtitle:
-        stats.totalUsers === 0
-          ? NO_DATA
-          : stats.blockedUsers === 0
-            ? 'All accounts active'
-            : `${toPercent(stats.blockedUsers, stats.totalUsers)}% of all users`,
-      icon: Ban,
-      accent: 'destructive',
-    },
-    {
       title: "Today's Revenue",
       value: formatCurrency(stats.todaysRevenue),
       subtitle: stats.totalPayments === 0 ? NO_DATA : 'from successful payments',
@@ -80,75 +55,25 @@ export default function Dashboard() {
       accent: 'success',
     },
     {
-      title: 'New Registrations Today',
+      title: 'New Registrations',
       value: stats.newRegistrationsToday,
       subtitle: stats.totalProfiles === 0 ? NO_DATA : 'profiles created today',
       icon: UserPlus,
       accent: 'primary',
     },
     {
-      title: 'Draft Profiles',
-      value: stats.draftProfiles,
-      subtitle: stats.totalProfiles === 0 ? NO_DATA : 'incomplete profiles',
-      icon: FileEdit,
-      accent: 'secondary',
-    },
-  ]
-
-  const secondaryStats = [
-    {
-      title: 'Male Profiles',
-      value: stats.maleProfiles,
-      subtitle:
-        stats.totalProfiles === 0
-          ? NO_DATA
-          : `${toPercent(stats.maleProfiles, stats.totalProfiles)}% of profiles`,
-      icon: Mars,
-      accent: 'primary',
-    },
-    {
-      title: 'Female Profiles',
-      value: stats.femaleProfiles,
-      subtitle:
-        stats.totalProfiles === 0
-          ? NO_DATA
-          : `${toPercent(stats.femaleProfiles, stats.totalProfiles)}% of profiles`,
-      icon: Venus,
+      title: 'New Profile Approvals',
+      value: stats.pendingNewProfiles,
+      subtitle: stats.pendingNewProfiles === 0 ? 'No new profiles awaiting review' : 'awaiting admin review',
+      icon: UserCheck,
       accent: 'secondary',
     },
     {
-      title: 'Active Profiles',
-      value: stats.activeProfiles,
-      subtitle:
-        stats.totalProfiles === 0
-          ? NO_DATA
-          : `${toPercent(stats.activeProfiles, stats.totalProfiles)}% of profiles`,
-      icon: Eye,
-      accent: 'success',
-    },
-    {
-      title: 'Hidden Profiles',
-      value: stats.hiddenProfiles,
-      subtitle:
-        stats.totalProfiles === 0
-          ? NO_DATA
-          : `${toPercent(stats.hiddenProfiles, stats.totalProfiles)}% of profiles`,
-      icon: EyeOff,
-      accent: 'primary',
-    },
-    {
-      title: 'Expiring Subscriptions',
-      value: stats.expiringSubscriptions,
-      subtitle: stats.totalSubscriptions === 0 ? NO_DATA : 'within 7 days',
-      icon: Clock,
+      title: 'Pending Profile Changes',
+      value: stats.pendingProfileChanges,
+      subtitle: stats.pendingProfileChanges === 0 ? 'No changes awaiting review' : 'awaiting admin review',
+      icon: ClipboardCheck,
       accent: 'secondary',
-    },
-    {
-      title: 'Expired Subscriptions',
-      value: stats.expiredSubscriptions,
-      subtitle: stats.totalSubscriptions === 0 ? NO_DATA : 'needs renewal',
-      icon: CalendarX,
-      accent: 'destructive',
     },
   ]
 
@@ -167,21 +92,16 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-6">
-        {primaryStats.map((stat) => 
-          stat.title === 'Draft Profiles' ? (
-            <Link key={stat.title} to="/profiles/drafts" className="block">
+        {primaryStats.map((stat) => {
+          const linkTo = PRIMARY_STAT_LINKS[stat.title]
+          return linkTo ? (
+            <Link key={stat.title} to={linkTo} className="block">
               <StatCard {...stat} loading={loading} />
             </Link>
           ) : (
             <StatCard key={stat.title} {...stat} loading={loading} />
           )
-        )}
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-6">
-        {secondaryStats.map((stat) => (
-          <StatCard key={stat.title} {...stat} loading={loading} />
-        ))}
+        })}
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -191,18 +111,9 @@ export default function Dashboard() {
         <SubscriptionPieChart data={charts.subscription} loading={loading} />
       </div>
 
-      <div className="mt-6">
-        <QuickActions />
-      </div>
-
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <RecentActivity activity={recentActivity} loading={loading} />
         <SystemStatusWidget firestoreError={error} />
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <RecentProfilesTable profiles={recentProfiles} loading={loading} />
-        <RecentPaymentsTable payments={recentPayments} loading={loading} />
       </div>
     </div>
   )

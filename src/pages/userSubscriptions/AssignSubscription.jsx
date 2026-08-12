@@ -281,9 +281,6 @@ export default function AssignSubscription() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <p className="text-sm">
-                    <span className="text-muted-foreground">Profile ID:</span> {profile.id}
-                  </p>
                   <p className="text-sm capitalize">
                     <span className="text-muted-foreground">Status:</span> {profile.system?.status}
                   </p>

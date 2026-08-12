@@ -2,6 +2,7 @@ import {
   Ban,
   CalendarClock,
   CalendarPlus,
+  CheckCircle2,
   CreditCard,
   Eye,
   EyeOff,
@@ -11,10 +12,13 @@ import {
   LogOut,
   Pencil,
   RotateCcw,
+  Send,
   Settings2,
   ShieldCheck,
   Trash2,
   Undo2,
+  UserCheck,
+  UserX,
   Wallet,
   XCircle,
 } from 'lucide-react'
@@ -39,6 +43,13 @@ const ACTION_META = {
   create_payment: { icon: Wallet, className: 'bg-success/10 text-success' },
   refund_payment: { icon: CreditCard, className: 'bg-orange-500/10 text-orange-600' },
   update_settings: { icon: Settings2, className: 'bg-secondary/20 text-secondary-foreground' },
+  submit_profile_change: { icon: Send, className: 'bg-primary/10 text-primary' },
+  approve_profile_change: { icon: CheckCircle2, className: 'bg-success/10 text-success' },
+  reject_profile_change: { icon: XCircle, className: 'bg-destructive/10 text-destructive' },
+  new_profile_submitted: { icon: Send, className: 'bg-primary/10 text-primary' },
+  new_profile_resubmitted: { icon: RotateCcw, className: 'bg-primary/10 text-primary' },
+  new_profile_approved: { icon: UserCheck, className: 'bg-success/10 text-success' },
+  new_profile_rejected: { icon: UserX, className: 'bg-destructive/10 text-destructive' },
 }
 
 const ACTION_LABELS = Object.fromEntries(ACTIVITY_ACTIONS.map((option) => [option.value, option.label]))

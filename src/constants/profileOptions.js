@@ -62,8 +62,10 @@ export const SUBSCRIPTION_OPTIONS = [
 
 export const PROFILE_STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
+  { value: 'pending_approval', label: 'Pending Approval' },
   { value: 'active', label: 'Active' },
   { value: 'hidden', label: 'Hidden' },
+  { value: 'rejected', label: 'Rejected' },
 ]
 
 export const PROFILE_STEPS = [

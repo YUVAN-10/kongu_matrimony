@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173 --max-time 3)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5175 --max-time 3)",
+      "Bash(firebase --version)",
+      "Bash(firebase projects:list)",
+      "Bash(python3 -c \"import json; json.load\\(open\\('/home/pepsoftwares/kongu_admin/firestore.indexes.json'\\)\\); print\\('valid JSON'\\)\")"
+    ]
+  }
+}

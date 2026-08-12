@@ -30,6 +30,13 @@ export const ACTIVITY_ACTIONS = [
   { value: 'create_payment', label: 'Create Payment' },
   { value: 'refund_payment', label: 'Refund Payment' },
   { value: 'update_settings', label: 'Update Settings' },
+  { value: 'submit_profile_change', label: 'Submit Profile Change' },
+  { value: 'approve_profile_change', label: 'Approve Profile Change' },
+  { value: 'reject_profile_change', label: 'Reject Profile Change' },
+  { value: 'new_profile_submitted', label: 'New Profile Submitted' },
+  { value: 'new_profile_resubmitted', label: 'New Profile Resubmitted' },
+  { value: 'new_profile_approved', label: 'New Profile Approved' },
+  { value: 'new_profile_rejected', label: 'New Profile Rejected' },
 ]
 
 export const ACTIVITY_TARGET_TYPES = [
@@ -40,4 +47,5 @@ export const ACTIVITY_TARGET_TYPES = [
   'subscription',
   'payment',
   'settings',
+  'profile_change_request',
 ]

@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import EmptyState from '@/components/common/EmptyState'
 import ProfileStatusBadge from '@/components/profiles/ProfileStatusBadge'
 import ProfileActionMenu from '@/components/profiles/ProfileActionMenu'
-import { calculateAge, formatDate } from '@/utils/helpers'
+import { calculateAge } from '@/utils/helpers'
 import { cn } from '@/lib/utils'
 
 const ROW_TINT = {
@@ -68,9 +68,6 @@ export default function ProfileCard({
                       <p className="truncate font-medium text-foreground">
                         {profile.personal?.fullName || '—'}
                       </p>
-                      <p className="font-mono text-[11px] text-muted-foreground" title={profile.id}>
-                        {profile.id.slice(0, 8)}…
-                      </p>
                     </div>
                     <ProfileActionMenu
                       profile={profile}
@@ -91,9 +88,6 @@ export default function ProfileCard({
 
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
                     <ProfileStatusBadge status={status} />
-                    <span className="text-[11px] text-muted-foreground">
-                      {formatDate(profile.system?.createdAt)}
-                    </span>
                   </div>
                 </div>
               </CardContent>

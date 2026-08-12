@@ -65,7 +65,6 @@ export default function ActivityDetailsDrawer({ log, open, onOpenChange }) {
               <p className="mb-1 text-xs font-medium text-muted-foreground uppercase">Target Information</p>
               <Row label="Module" value={log.module} />
               <Row label="Target Type" value={log.targetType} />
-              <Row label="Target ID" value={log.targetId} />
             </div>
 
             <div>

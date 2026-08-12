@@ -10,14 +10,10 @@ import { subscribeWithRetry } from '@/utils/subscribeWithRetry'
 
 const DEFAULT_FILTERS = {
   gender: '',
-  religion: '',
   city: '',
   occupation: '',
   subscription: '',
-  createdBy: '',
   status: '',
-  dateFrom: '',
-  dateTo: '',
 }
 
 function sortProfilesClientSide(profiles, sortBy) {

@@ -34,7 +34,7 @@ export default function PaymentCard({ payments, loading, onView, onMarkSuccess, 
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate font-mono text-xs text-muted-foreground">
-                    {payment.transactionId || payment.id}
+                    {payment.transactionId || '—'}
                   </p>
                   <p className="truncate font-medium text-foreground">{payment.user?.name || '—'}</p>
                   <p className="truncate text-xs text-muted-foreground">{payment.planName}</p>

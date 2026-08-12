@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
-export default function SidebarItem({ item, onNavigate }) {
+export default function SidebarItem({ item, onNavigate, badge }) {
   const { title, icon: Icon, path } = item
 
   return (
@@ -23,6 +23,11 @@ export default function SidebarItem({ item, onNavigate }) {
         aria-hidden="true"
       />
       <span className="truncate">{title}</span>
+      {Boolean(badge) && (
+        <span className="ml-auto flex size-5 shrink-0 items-center justify-center rounded-full bg-destructive text-[11px] font-semibold text-white">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </NavLink>
   )
 }

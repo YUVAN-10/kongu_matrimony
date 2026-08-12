@@ -13,10 +13,8 @@ import {
   updateDoc,
   getCountFromServer,
   serverTimestamp,
-  Timestamp,
 } from 'firebase/firestore'
 import { db } from '@/firebase/firebase'
-import { endOfDay } from '@/utils/helpers'
 import { createUserAccount } from '@/services/authService'
 import { createUserDocument } from '@/services/userService'
 import { removeUndefined } from '@/utils/removeUndefined'
@@ -41,7 +39,6 @@ function buildFilterConstraints(filters = {}) {
   }
 
   if (filters.gender) constraints.push(where('personal.gender', '==', filters.gender))
-  if (filters.religion) constraints.push(where('personal.religion', '==', filters.religion))
   if (filters.city?.trim()) constraints.push(where('address.city', '==', filters.city.trim()))
   if (filters.occupation?.trim()) {
     constraints.push(where('occupation.jobTitle', '==', filters.occupation.trim()))
@@ -49,25 +46,11 @@ function buildFilterConstraints(filters = {}) {
   if (filters.subscription) {
     constraints.push(where('system.subscriptionStatus', '==', filters.subscription))
   }
-  if (filters.createdBy?.trim()) {
-    constraints.push(where('system.createdBy', '==', filters.createdBy.trim()))
-  }
-  if (filters.dateFrom) {
-    constraints.push(where('system.createdAt', '>=', Timestamp.fromDate(new Date(filters.dateFrom))))
-  }
-  if (filters.dateTo) {
-    constraints.push(
-      where('system.createdAt', '<=', Timestamp.fromDate(endOfDay(new Date(filters.dateTo))))
-    )
-  }
 
   return constraints
 }
 
-function buildSortConstraint(filters, sortBy) {
-  if (filters.dateFrom || filters.dateTo) {
-    return orderBy('system.createdAt', sortBy === 'oldest' ? 'asc' : 'desc')
-  }
+function buildSortConstraint(sortBy) {
   switch (sortBy) {
     case 'oldest':
       return orderBy('system.createdAt', 'asc')
@@ -92,7 +75,7 @@ function mapSnapshot(snapshot) {
 export function subscribeToProfilesPage({ filters, sortBy, pageSize, cursor }, onData, onError) {
   const constraints = [
     ...buildFilterConstraints(filters),
-    buildSortConstraint(filters, sortBy),
+    buildSortConstraint(sortBy),
     limit(pageSize),
   ]
   if (cursor) constraints.push(startAfter(cursor))

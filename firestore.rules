@@ -36,10 +36,33 @@ service cloud.firestore {
     // Profile Management module: active admins can read, create, and update
     // profiles (drafts, publishing, hide/restore, and the soft-delete
     // update). Hard delete stays locked out — see softDeleteProfile.
+    //
+    // New Profile Approvals: a signed-in client may also read/create/update
+    // their OWN profile (profiles.userId is always their own Auth uid — see
+    // createLinkedUser), but only while it's still draft/rejected — once it
+    // moves to pending_approval it's frozen for the client until an admin
+    // reviews it. A client-issued write can only land status on
+    // draft/pending_approval, and can never itself set/touch the
+    // admin-only review fields (approvedBy/approvedAt/rejectedBy/
+    // rejectedAt/rejectionReason) or status=active — that's what keeps
+    // approve/reject, and self-approval, admin-only.
     match /profiles/{profileId} {
-      allow read: if isActiveAdmin();
-      allow create: if isActiveAdmin();
-      allow update: if isActiveAdmin();
+      allow read: if isActiveAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isActiveAdmin() ||
+        (isSignedIn() &&
+         request.resource.data.userId == request.auth.uid &&
+         request.resource.data.system.status == 'draft');
+      allow update: if isActiveAdmin() ||
+        (isSignedIn() &&
+         resource.data.userId == request.auth.uid &&
+         resource.data.system.status in ['draft', 'rejected'] &&
+         request.resource.data.userId == request.auth.uid &&
+         request.resource.data.system.status in ['draft', 'pending_approval'] &&
+         request.resource.data.system.get('approvedBy', null) == resource.data.system.get('approvedBy', null) &&
+         request.resource.data.system.get('approvedAt', null) == resource.data.system.get('approvedAt', null) &&
+         request.resource.data.system.get('rejectedBy', null) == resource.data.system.get('rejectedBy', null) &&
+         request.resource.data.system.get('rejectedAt', null) == resource.data.system.get('rejectedAt', null) &&
+         request.resource.data.system.get('rejectionReason', null) == resource.data.system.get('rejectionReason', null));
       allow delete: if false;
     }
 
@@ -80,11 +103,53 @@ service cloud.firestore {
 
     // Audit log: any active admin can append entries (Assign/Renew/Extend/
     // Cancel each write one), but never edit or delete existing ones —
-    // an audit trail that could be rewritten isn't an audit trail.
+    // an audit trail that could be rewritten isn't an audit trail. The one
+    // non-admin exception: a signed-in client may self-attribute exactly
+    // these client-triggered actions — submitting/resubmitting a profile or
+    // a profile-change request — never anything else, and never on someone
+    // else's behalf (adminId is pinned to their own uid). Still never
+    // editable/deletable by anyone.
     match /activityLogs/{logId} {
       allow read: if isActiveAdmin();
-      allow create: if isActiveAdmin();
+      allow create: if isActiveAdmin() ||
+        (isSignedIn() &&
+         request.resource.data.action in ['submit_profile_change', 'new_profile_submitted', 'new_profile_resubmitted'] &&
+         request.resource.data.adminId == request.auth.uid);
       allow update, delete: if false;
+    }
+
+    // Profile Change Approvals: a signed-in client may create/update ONLY a
+    // still-pending change request for their OWN profile — userId must be
+    // their own uid (profiles.userId is always the owning Auth uid, see
+    // createLinkedUser), submittedBy is pinned to that same uid, and
+    // isOwnProfile cross-checks the live profiles/{profileId} doc actually
+    // belongs to them (closes the gap where someone could otherwise name a
+    // profileId/userId that isn't theirs). They can never flip status away
+    // from 'pending' or reassign the request to a different profile/user —
+    // that's what keeps approve/reject, and re-targeting, admin-only. Active
+    // admins have full read/write, matching every other module in this file.
+    function isOwnProfile(profileId, userId) {
+      return exists(/databases/$(database)/documents/profiles/$(profileId)) &&
+        get(/databases/$(database)/documents/profiles/$(profileId)).data.userId == userId;
+    }
+
+    match /profileChangeRequests/{requestId} {
+      allow read: if isActiveAdmin() || (isSignedIn() && resource.data.submittedBy == request.auth.uid);
+      allow create: if isActiveAdmin() ||
+        (isSignedIn() &&
+         request.resource.data.submittedBy == request.auth.uid &&
+         request.resource.data.userId == request.auth.uid &&
+         request.resource.data.status == 'pending' &&
+         isOwnProfile(request.resource.data.profileId, request.resource.data.userId));
+      allow update: if isActiveAdmin() ||
+        (isSignedIn() &&
+         resource.data.submittedBy == request.auth.uid &&
+         resource.data.status == 'pending' &&
+         request.resource.data.status == 'pending' &&
+         request.resource.data.submittedBy == resource.data.submittedBy &&
+         request.resource.data.profileId == resource.data.profileId &&
+         request.resource.data.userId == resource.data.userId);
+      allow delete: if false;
     }
 
     // Deny everything else by default.

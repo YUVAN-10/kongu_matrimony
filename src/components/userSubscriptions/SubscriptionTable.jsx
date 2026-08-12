@@ -9,7 +9,7 @@ import { formatCurrency, formatDate, getDaysRemaining, isWithinNextDays } from '
 import { EXPIRY_ALERT_WINDOW_DAYS, EXPIRY_WARNING_WINDOW_DAYS } from '@/constants/userSubscriptionOptions'
 import { cn } from '@/lib/utils'
 
-const COLUMN_COUNT = 10
+const COLUMN_COUNT = 9
 const PAYMENT_STATUS_STYLES = {
   paid: 'bg-success/10 text-success',
   pending: 'bg-secondary/20 text-secondary-foreground',
@@ -56,7 +56,6 @@ export default function SubscriptionTable({ subscriptions, loading, onView, onRe
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
               <th className="px-4 py-3 font-medium">User</th>
-              <th className="px-4 py-3 font-medium">Profile ID</th>
               <th className="px-4 py-3 font-medium">Plan</th>
               <th className="px-4 py-3 font-medium">Amount</th>
               <th className="px-4 py-3 font-medium">Purchase Date</th>
@@ -92,9 +91,6 @@ export default function SubscriptionTable({ subscriptions, loading, onView, onRe
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground">{sub.user?.name || '—'}</p>
                     <p className="text-xs text-muted-foreground">{sub.user?.phone || sub.user?.email || ''}</p>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground" title={sub.profileId}>
-                    {sub.profileId ? `${sub.profileId.slice(0, 8)}…` : '—'}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{sub.planName}</td>
                   <td className="px-4 py-3 text-muted-foreground">{formatCurrency(sub.amount)}</td>

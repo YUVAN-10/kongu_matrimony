@@ -2,6 +2,8 @@ import { HeartHandshake } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import SidebarItem from '@/components/layout/SidebarItem'
 import { menuSections } from '@/constants/menuItems'
+import { usePendingChangeRequestsCount } from '@/hooks/useProfileChangeRequests'
+import { usePendingNewProfilesCount } from '@/hooks/useNewProfileApprovals'
 
 function SidebarBrand() {
   return (
@@ -17,6 +19,10 @@ function SidebarBrand() {
 }
 
 function SidebarNav({ onNavigate }) {
+  const { count: pendingChangeRequests } = usePendingChangeRequestsCount()
+  const { count: pendingNewProfiles } = usePendingNewProfilesCount()
+  const badges = { pendingChangeRequests, pendingNewProfiles }
+
   return (
     <nav className="flex-1 overflow-y-auto px-4 py-6" aria-label="Main navigation">
       {menuSections.map((section) => (
@@ -27,7 +33,11 @@ function SidebarNav({ onNavigate }) {
           <ul className="space-y-1">
             {section.items.map((item) => (
               <li key={item.path}>
-                <SidebarItem item={item} onNavigate={onNavigate} />
+                <SidebarItem
+                  item={item}
+                  onNavigate={onNavigate}
+                  badge={item.badgeKey ? badges[item.badgeKey] : undefined}
+                />
               </li>
             ))}
           </ul>

@@ -117,7 +117,6 @@ export default function ViewSubscription() {
                 Expired {Math.abs(days)} days ago
               </span>
             )}
-            <span className="text-xs text-muted-foreground">ID: {subscription.id}</span>
           </div>
         </div>
 
@@ -186,7 +185,6 @@ export default function ViewSubscription() {
                     <p className="text-xs text-muted-foreground capitalize">{profile?.personal?.gender}</p>
                   </div>
                 </div>
-                <Row label="Profile ID" value={subscription.profileId} />
               </>
             )}
           </CardContent>
@@ -213,7 +211,7 @@ export default function ViewSubscription() {
           </CardHeader>
           <CardContent>
             <Row label="Payment Status" value={subscription.paymentStatus} />
-            <Row label="Payment ID" value={subscription.paymentId || 'Not linked yet'} />
+            {!subscription.paymentId && <p className="text-sm text-muted-foreground">Not linked yet</p>}
             {subscription.paymentId && (
               <Button asChild variant="outline" size="sm" className="mt-3 gap-1.5">
                 <Link to={`/payments/${subscription.paymentId}`}>

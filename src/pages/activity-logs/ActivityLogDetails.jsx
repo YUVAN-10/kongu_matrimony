@@ -121,7 +121,6 @@ export default function ActivityLogDetails() {
           <CardContent>
             <Row label="Module" value={log.module} />
             <Row label="Target Type" value={log.targetType} />
-            <Row label="Target ID" value={log.targetId} />
           </CardContent>
         </Card>
 

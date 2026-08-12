@@ -6,6 +6,8 @@ import {
   FileStack,
   CreditCard,
   ScrollText,
+  ClipboardCheck,
+  UserCheck,
 } from 'lucide-react'
 
 // Single source of truth for sidebar navigation.
@@ -22,6 +24,18 @@ export const menuSections = [
       { title: 'Users', icon: Users, path: '/users' },
       { title: 'Profiles', icon: NotebookText, path: '/profiles' },
       { title: 'Draft Profiles', icon: NotebookText, path: '/profiles/drafts' },
+      {
+        title: 'New Profile Approvals',
+        icon: UserCheck,
+        path: '/profiles/new-approvals',
+        badgeKey: 'pendingNewProfiles',
+      },
+      {
+        title: 'Profile Change Approvals',
+        icon: ClipboardCheck,
+        path: '/profiles/change-approvals',
+        badgeKey: 'pendingChangeRequests',
+      },
     ],
   },
   {

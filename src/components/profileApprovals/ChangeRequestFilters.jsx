@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { GENDER_OPTIONS, SUBSCRIPTION_OPTIONS, PROFILE_STATUS_OPTIONS } from '@/constants/profileOptions'
+import { CHANGE_REQUEST_STATUS_OPTIONS } from '@/constants/changeRequestOptions'
 
+// Same FilterSelect/DebouncedTextFilter helpers as ProfileFilters.jsx.
 function FilterSelect({ label, value, options, onChange, width = 'w-36' }) {
   return (
     <div className={`${width} space-y-1.5`}>
@@ -58,41 +59,21 @@ function DebouncedTextFilter({ id, label, value, onCommit, placeholder, width = 
   )
 }
 
-export default function ProfileFilters({ filters, onChange, onReset }) {
+export default function ChangeRequestFilters({ filters, onChange, onReset }) {
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border/70 bg-white p-4">
       <FilterSelect
-        label="Gender"
-        value={filters.gender}
-        options={GENDER_OPTIONS}
-        onChange={(gender) => onChange({ gender })}
-      />
-      <DebouncedTextFilter
-        id="city-filter"
-        label="City"
-        value={filters.city}
-        onCommit={(city) => onChange({ city })}
-        placeholder="e.g. Erode"
-      />
-      <DebouncedTextFilter
-        id="occupation-filter"
-        label="Occupation"
-        value={filters.occupation}
-        onCommit={(occupation) => onChange({ occupation })}
-        placeholder="e.g. Engineer"
-      />
-      <FilterSelect
-        label="Subscription"
-        value={filters.subscription}
-        options={SUBSCRIPTION_OPTIONS}
-        onChange={(subscription) => onChange({ subscription })}
-      />
-      <FilterSelect
-        label="Profile Status"
+        label="Status"
         value={filters.status}
-        options={PROFILE_STATUS_OPTIONS}
+        options={CHANGE_REQUEST_STATUS_OPTIONS}
         onChange={(status) => onChange({ status })}
-        width="w-40"
+      />
+      <DebouncedTextFilter
+        id="profile-id-filter"
+        label="Profile ID"
+        value={filters.profileId}
+        onCommit={(profileId) => onChange({ profileId })}
+        placeholder="e.g. P1001"
       />
 
       <Button type="button" variant="outline" onClick={onReset} className="gap-1.5">

@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { GENDER_OPTIONS, SUBSCRIPTION_OPTIONS, PROFILE_STATUS_OPTIONS } from '@/constants/profileOptions'
+import { GENDER_OPTIONS } from '@/constants/profileOptions'
 
+// Same FilterSelect/DebouncedTextFilter helpers as ProfileFilters.jsx.
 function FilterSelect({ label, value, options, onChange, width = 'w-36' }) {
   return (
     <div className={`${width} space-y-1.5`}>
@@ -58,7 +59,7 @@ function DebouncedTextFilter({ id, label, value, onCommit, placeholder, width = 
   )
 }
 
-export default function ProfileFilters({ filters, onChange, onReset }) {
+export default function NewProfileFilters({ filters, onChange, onReset }) {
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border/70 bg-white p-4">
       <FilterSelect
@@ -68,32 +69,44 @@ export default function ProfileFilters({ filters, onChange, onReset }) {
         onChange={(gender) => onChange({ gender })}
       />
       <DebouncedTextFilter
-        id="city-filter"
+        id="new-profile-city-filter"
         label="City"
         value={filters.city}
         onCommit={(city) => onChange({ city })}
         placeholder="e.g. Erode"
       />
       <DebouncedTextFilter
-        id="occupation-filter"
-        label="Occupation"
-        value={filters.occupation}
-        onCommit={(occupation) => onChange({ occupation })}
-        placeholder="e.g. Engineer"
+        id="new-profile-completion-filter"
+        label="Min Completion %"
+        value={filters.minCompletion}
+        onCommit={(minCompletion) => onChange({ minCompletion })}
+        placeholder="e.g. 80"
+        width="w-32"
       />
-      <FilterSelect
-        label="Subscription"
-        value={filters.subscription}
-        options={SUBSCRIPTION_OPTIONS}
-        onChange={(subscription) => onChange({ subscription })}
-      />
-      <FilterSelect
-        label="Profile Status"
-        value={filters.status}
-        options={PROFILE_STATUS_OPTIONS}
-        onChange={(status) => onChange({ status })}
-        width="w-40"
-      />
+
+      <div className="w-36 space-y-1.5">
+        <Label htmlFor="new-profile-date-from" className="text-xs text-muted-foreground">
+          Submitted From
+        </Label>
+        <Input
+          id="new-profile-date-from"
+          type="date"
+          value={filters.dateFrom}
+          onChange={(event) => onChange({ dateFrom: event.target.value })}
+        />
+      </div>
+
+      <div className="w-36 space-y-1.5">
+        <Label htmlFor="new-profile-date-to" className="text-xs text-muted-foreground">
+          Submitted To
+        </Label>
+        <Input
+          id="new-profile-date-to"
+          type="date"
+          value={filters.dateTo}
+          onChange={(event) => onChange({ dateTo: event.target.value })}
+        />
+      </div>
 
       <Button type="button" variant="outline" onClick={onReset} className="gap-1.5">
         <RotateCcw className="size-3.5" aria-hidden="true" />

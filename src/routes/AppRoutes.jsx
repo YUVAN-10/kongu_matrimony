@@ -14,6 +14,10 @@ import AddProfile from '@/pages/profiles/AddProfile'
 import EditProfile from '@/pages/profiles/EditProfile'
 import ViewProfile from '@/pages/profiles/ViewProfile'
 import DraftProfiles from '@/pages/profiles/DraftProfiles'
+import NewProfileApprovals from '@/pages/newProfileApprovals/NewProfileApprovals'
+import NewProfileReview from '@/pages/newProfileApprovals/NewProfileReview'
+import ProfileChangeApprovals from '@/pages/profileApprovals/ProfileChangeApprovals'
+import ProfileChangeReview from '@/pages/profileApprovals/ProfileChangeReview'
 import SubscriptionPlans from '@/pages/subscriptions/SubscriptionPlans'
 import AddSubscriptionPlan from '@/pages/subscriptions/AddSubscriptionPlan'
 import EditSubscriptionPlan from '@/pages/subscriptions/EditSubscriptionPlan'
@@ -55,6 +59,10 @@ export default function AppRoutes() {
           <Route path="/users/:userId" element={<Users />} />
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/profiles/drafts" element={<DraftProfiles />} />
+          <Route path="/profiles/new-approvals" element={<NewProfileApprovals />} />
+          <Route path="/profiles/new-approvals/:profileId" element={<NewProfileReview />} />
+          <Route path="/profiles/change-approvals" element={<ProfileChangeApprovals />} />
+          <Route path="/profiles/change-approvals/:requestId" element={<ProfileChangeReview />} />
           <Route path="/profiles/add" element={<AddProfile />} />
           <Route path="/profiles/:profileId/edit" element={<EditProfile />} />
           <Route path="/profiles/:profileId" element={<ViewProfile />} />
@@ -70,7 +78,6 @@ export default function AppRoutes() {
           <Route path="/payments/add" element={<AddPayment />} />
           <Route path="/payments/:paymentId/refund" element={<RefundPayment />} />
           <Route path="/payments/:paymentId" element={<PaymentDetails />} />
-          {/* Settings page removed */}
           <Route path="/activity-logs" element={<ActivityLogs />} />
           <Route path="/activity-logs/:logId" element={<ActivityLogDetails />} />
         </Route>

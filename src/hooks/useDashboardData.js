@@ -69,15 +69,22 @@ export function useDashboardData() {
   const subscriptions = useFirestoreCollection('subscriptions')
   const payments = useFirestoreCollection('payments')
   const activityLogs = useFirestoreCollection('activityLogs')
+  const changeRequests = useFirestoreCollection('profileChangeRequests')
 
   const loading =
     users.loading ||
     profiles.loading ||
     subscriptions.loading ||
     payments.loading ||
-    activityLogs.loading
+    activityLogs.loading ||
+    changeRequests.loading
   const error =
-    users.error || profiles.error || subscriptions.error || payments.error || activityLogs.error
+    users.error ||
+    profiles.error ||
+    subscriptions.error ||
+    payments.error ||
+    activityLogs.error ||
+    changeRequests.error
 
   const stats = useMemo(() => {
     // paymentDate (the actual transaction date), not createdAt (the record's
@@ -103,6 +110,7 @@ export function useDashboardData() {
       activeProfiles: profiles.data.filter((profile) => profile.system?.status === 'active').length,
       hiddenProfiles: profiles.data.filter((profile) => profile.system?.status === 'hidden').length,
       draftProfiles: profiles.data.filter((profile) => profile.system?.status === 'draft').length,
+      pendingNewProfiles: profiles.data.filter((profile) => profile.system?.status === 'pending_approval').length,
       expiringSubscriptions: subscriptions.data.filter(
         (sub) => sub.expiryDate && isWithinNextDays(sub.expiryDate, EXPIRING_WINDOW_DAYS)
       ).length,
@@ -114,8 +122,9 @@ export function useDashboardData() {
       // that's legitimately zero (e.g. 0 blocked users out of 50).
       totalPayments: payments.data.length,
       totalSubscriptions: subscriptions.data.length,
+      pendingProfileChanges: changeRequests.data.filter((request) => request.status === 'pending').length,
     }
-  }, [users.data, profiles.data, subscriptions.data, payments.data])
+  }, [users.data, profiles.data, subscriptions.data, payments.data, changeRequests.data])
 
   const charts = useMemo(() => {
     const buckets = buildMonthBuckets()
@@ -140,20 +149,10 @@ export function useDashboardData() {
     }
   }, [profiles.data, payments.data, stats])
 
-  const recentProfiles = useMemo(
-    () => sortByNewest(profiles.data, 'system.createdAt').slice(0, 5),
-    [profiles.data]
-  )
-
-  const recentPayments = useMemo(
-    () => sortByNewest(payments.data, 'createdAt').slice(0, 5),
-    [payments.data]
-  )
-
   const recentActivity = useMemo(
     () => sortByNewest(activityLogs.data, 'createdAt').slice(0, 5),
     [activityLogs.data]
   )
 
-  return { loading, error, stats, charts, recentProfiles, recentPayments, recentActivity }
+  return { loading, error, stats, charts, recentActivity }
 }

@@ -296,7 +296,7 @@ const EXPORT_COLUMNS = [
 
 function toExportRows(payments) {
   return payments.map((payment) => ({
-    transactionId: payment.transactionId || payment.id,
+    transactionId: payment.transactionId || '',
     userId: payment.userId || '',
     profileId: payment.profileId || '',
     planName: payment.planName || '',

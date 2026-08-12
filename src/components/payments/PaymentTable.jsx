@@ -8,7 +8,7 @@ import PaymentActionMenu from '@/components/payments/PaymentActionMenu'
 import { formatCurrency, formatDate } from '@/utils/helpers'
 import { cn } from '@/lib/utils'
 
-const COLUMN_COUNT = 10
+const COLUMN_COUNT = 9
 
 // Desktop/tablet table. See PaymentCard.jsx for the mobile equivalent.
 export default function PaymentTable({ payments, loading, onView, onMarkSuccess, onMarkFailed, onRetry, onCancel, onRefund }) {
@@ -23,7 +23,6 @@ export default function PaymentTable({ payments, loading, onView, onMarkSuccess,
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
               <th className="px-4 py-3 font-medium">Transaction ID</th>
               <th className="px-4 py-3 font-medium">User</th>
-              <th className="px-4 py-3 font-medium">Profile ID</th>
               <th className="px-4 py-3 font-medium">Plan</th>
               <th className="px-4 py-3 font-medium">Amount</th>
               <th className="px-4 py-3 font-medium">Method</th>
@@ -62,14 +61,11 @@ export default function PaymentTable({ payments, loading, onView, onMarkSuccess,
                   )}
                 >
                   <td className="px-4 py-3 font-mono text-xs text-foreground">
-                    {payment.transactionId || payment.id}
+                    {payment.transactionId || '—'}
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground">{payment.user?.name || '—'}</p>
                     <p className="text-xs text-muted-foreground">{payment.user?.phone || payment.user?.email || ''}</p>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground" title={payment.profileId}>
-                    {payment.profileId ? `${payment.profileId.slice(0, 8)}…` : '—'}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{payment.planName}</td>
                   <td className="px-4 py-3 font-medium text-foreground">{formatCurrency(payment.amount)}</td>

@@ -1,55 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { CheckCircle2, CircleAlert, Pencil, Eye, Trash2, User } from 'lucide-react'
+import { CheckCircle2, CircleAlert, Pencil, Eye, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ProfileSearch from '@/components/profiles/ProfileSearch'
 import { useProfiles } from '@/hooks/useProfiles'
-import { useAuth } from '@/hooks/useAuth'
-import { softDeleteProfile } from '@/services/profileService'
-
-
-// Calculate profile completion percentage
-function calculateProfileCompletion(profile) {
-  let totalFields = 0
-  let completedFields = 0
-
-  // Personal fields
-  const personalFields = ['fullName', 'email', 'mobileNumber', 'gender', 'dateOfBirth', 'address']
-  personalFields.forEach(field => {
-    totalFields++
-    if (profile.personal?.[field]) completedFields++
-  })
-
-  // Professional fields
-  const professionalFields = ['occupation', 'education', 'income']
-  professionalFields.forEach(field => {
-    totalFields++
-    if (profile.professional?.[field]) completedFields++
-  })
-
-  // Family fields
-  const familyFields = ['fatherName', 'motherName', 'siblings']
-  familyFields.forEach(field => {
-    totalFields++
-    if (profile.family?.[field]) completedFields++
-  })
-
-  // Partner preferences
-  const partnerFields = ['minAge', 'maxAge', 'religion', 'city']
-  partnerFields.forEach(field => {
-    totalFields++
-    if (profile.partnerPreferences?.[field]) completedFields++
-  })
-
-  // Photo
-  if (profile.photos?.length > 0) completedFields++
-  totalFields++
-
-  return Math.round((completedFields / totalFields) * 100)
-}
+import { calculateProfileCompletion } from '@/utils/profileCompletion'
 
 export default function DraftProfiles() {
-  const { currentAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -87,10 +44,6 @@ export default function DraftProfiles() {
   }
   function goToUser(userId) {
     navigate(`/users/${userId}`)
-  }
-
-  async function handleDelete(profile) {
-    await softDeleteProfile(profile.id, { admin: currentAdmin })
   }
 
   return (
@@ -150,7 +103,6 @@ export default function DraftProfiles() {
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Photo</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">ID</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Completion</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Last Updated</th>
@@ -160,13 +112,13 @@ export default function DraftProfiles() {
             <tbody>
               {loading && profiles.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
                     Loading draft profiles...
                   </td>
                 </tr>
               ) : profiles.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
                     No draft profiles found.
                   </td>
                 </tr>
@@ -186,7 +138,6 @@ export default function DraftProfiles() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm font-mono">{profile.id}</td>
                     <td className="px-4 py-3 text-sm font-medium">{profile.personal?.fullName || 'Unnamed'}</td>
                     <td className="px-4 py-3 w-48">
                       <div className="space-y-1">
@@ -238,16 +189,6 @@ export default function DraftProfiles() {
                             User
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(profile)}
-                          className="h-8 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                          title="Delete Draft"
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
                       </div>
                     </td>
                   </tr>
