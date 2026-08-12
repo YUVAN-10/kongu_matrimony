@@ -33,6 +33,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Phone-uniqueness lock (keyed by normalized phone digits) — see
+    // reservePhoneNumber/releasePhoneReservation in userService.js. Delete
+    // IS allowed here (unlike users/profiles/etc.) because this is a mutable
+    // reservation, not an audit trail: releasing a number when a user's
+    // phone changes, or rolling back a reservation whose account creation
+    // failed afterward, are both legitimate operational needs.
+    match /phoneIndex/{phone} {
+      allow read: if isActiveAdmin();
+      allow create, update, delete: if isActiveAdmin();
+    }
+
     // Profile Management module: active admins can read, create, and update
     // profiles (drafts, publishing, hide/restore, and the soft-delete
     // update). Hard delete stays locked out — see softDeleteProfile.

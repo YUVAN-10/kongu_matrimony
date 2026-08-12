@@ -8,8 +8,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  addDoc,
-  updateDoc,
   getCountFromServer,
   runTransaction,
   serverTimestamp,
@@ -107,21 +105,29 @@ export async function createProfileChangeRequest({ profileId, userId, changes, s
     where('status', '==', 'pending'),
     limit(1)
   )
-  const existingSnapshot = await getDocs(existingPendingQuery)
 
-  let requestId
-  if (!existingSnapshot.empty) {
-    // Merge into the existing pending request instead of creating a second
-    // one — new values win for any field touched again before review.
-    const existingDoc = existingSnapshot.docs[0]
-    requestId = existingDoc.id
-    const mergedChanges = { ...(existingDoc.data().changes || {}), ...changes }
-    await updateDoc(doc(db, CHANGE_REQUESTS_COLLECTION, requestId), {
-      changes: mergedChanges,
-      updatedAt: serverTimestamp(),
-    })
-  } else {
-    const newDocRef = await addDoc(collection(db, CHANGE_REQUESTS_COLLECTION), {
+  // Transactional so two near-simultaneous submissions for the same profile
+  // (e.g. two tabs, or a slow network retry) can't both see "no pending
+  // request" and each create a separate one — the second transaction
+  // re-reads the query and correctly finds + merges into the first's,
+  // instead of racing to a duplicate pending request.
+  const requestId = await runTransaction(db, async (tx) => {
+    const existingSnapshot = await tx.get(existingPendingQuery)
+
+    if (!existingSnapshot.empty) {
+      // Merge into the existing pending request instead of creating a second
+      // one — new values win for any field touched again before review.
+      const existingDoc = existingSnapshot.docs[0]
+      const mergedChanges = { ...(existingDoc.data().changes || {}), ...changes }
+      tx.update(existingDoc.ref, {
+        changes: mergedChanges,
+        updatedAt: serverTimestamp(),
+      })
+      return existingDoc.id
+    }
+
+    const newDocRef = doc(collection(db, CHANGE_REQUESTS_COLLECTION))
+    tx.set(newDocRef, {
       profileId,
       userId,
       status: 'pending',
@@ -135,8 +141,8 @@ export async function createProfileChangeRequest({ profileId, userId, changes, s
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     })
-    requestId = newDocRef.id
-  }
+    return newDocRef.id
+  })
 
   // Client-attributed log entry — see firestore.rules' activityLogs block
   // for the narrow carve-out that lets a signed-in (non-admin) submitter

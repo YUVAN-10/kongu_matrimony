@@ -9,45 +9,63 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAuth } from '@/hooks/useAuth'
 import { createLinkedUser } from '@/services/profileService'
-import { searchUsersByPhone, searchUsersByEmail } from '@/services/userService'
+import { searchUsersByPhone, searchUsersByEmail, searchUsersByName } from '@/services/userService'
 import { GENDER_OPTIONS } from '@/constants/profileOptions'
 
 export default function AddUser() {
   const { currentAdmin } = useAuth()
   const navigate = useNavigate()
   const [submitError, setSubmitError] = useState(null)
+  const [nameDuplicateWarning, setNameDuplicateWarning] = useState(null)
   const {
     register,
     handleSubmit,
     control,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: { name: '', email: '', phone: '', tempPassword: '', gender: '', city: '' },
   })
 
-  async function onSubmit(data) {
+  async function createUser(data) {
+    await createLinkedUser({ ...data, admin: currentAdmin })
+    navigate('/profiles', { state: { successMessage: 'User created successfully. A draft profile has been created for this user.' } })
+  }
+
+  async function onSubmit(data, { skipNameCheck = false } = {}) {
     setSubmitError(null)
     try {
-      // 1. Check for duplicate users with the same phone number
+      // 1. Phone and email are strict — block on any match.
       const existingByPhone = await searchUsersByPhone(data.phone)
       if (existingByPhone.length > 0) {
         setSubmitError('A user with this phone number already exists.')
         return
       }
-      
-      // 2. Check for duplicate users with the same email
+
       const existingByEmail = await searchUsersByEmail(data.email)
       if (existingByEmail.length > 0) {
         setSubmitError('A user with this email address already exists.')
         return
       }
-      
-      // 3. If no duplicates, create the user and automatically create draft profile
-      await createLinkedUser({ ...data, admin: currentAdmin })
-      navigate('/profiles', { state: { successMessage: 'User created successfully. A draft profile has been created for this user.' } })
+
+      // 2. Name is a warning only — let the admin confirm and proceed anyway.
+      if (!skipNameCheck) {
+        const existingByName = await searchUsersByName(data.name)
+        if (existingByName.length > 0) {
+          setNameDuplicateWarning(data.name)
+          return
+        }
+      }
+
+      await createUser(data)
     } catch (error) {
       setSubmitError(error.message || 'Could not create user. Please try again.')
     }
+  }
+
+  async function handleCreateAnyway() {
+    setNameDuplicateWarning(null)
+    await onSubmit(getValues(), { skipNameCheck: true })
   }
 
   return (
@@ -77,6 +95,34 @@ export default function AddUser() {
               >
                 <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 <span>{submitError}</span>
+              </div>
+            )}
+
+            {nameDuplicateWarning && (
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-lg border border-secondary/30 bg-secondary/10 px-4 py-3 text-sm"
+              >
+                <CircleAlert className="mt-0.5 size-4 shrink-0 text-secondary-foreground" aria-hidden="true" />
+                <div className="flex-1 space-y-2">
+                  <span>
+                    A user named &quot;{nameDuplicateWarning}&quot; already exists. This might be a
+                    different person with the same name — create anyway?
+                  </span>
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" onClick={handleCreateAnyway} disabled={isSubmitting}>
+                      Create Anyway
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setNameDuplicateWarning(null)}
+                    >
+                      Let Me Check
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
 

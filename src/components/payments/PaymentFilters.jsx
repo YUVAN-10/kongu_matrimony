@@ -6,9 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFirestoreCollection } from '@/hooks/useFirestoreCollection'
 import { PAYMENT_STATUS_OPTIONS, PAYMENT_METHOD_OPTIONS, GATEWAY_OPTIONS } from '@/constants/paymentOptions'
 
-function FilterSelect({ label, value, options, onChange, width = 'w-40' }) {
+function FilterSelect({ label, value, options, onChange, width = 'sm:w-40' }) {
   return (
-    <div className={`${width} space-y-1.5`}>
+    <div className={`w-full ${width} space-y-1.5`}>
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Select value={value || 'all'} onValueChange={(next) => onChange(next === 'all' ? '' : next)}>
         <SelectTrigger>
@@ -56,7 +56,7 @@ export default function PaymentFilters({ searchTerm, onSearchChange, filters, on
         </div>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end">
         <FilterSelect
           label="Payment Status"
           value={filters.status}
@@ -68,7 +68,7 @@ export default function PaymentFilters({ searchTerm, onSearchChange, filters, on
           value={filters.paymentMethod}
           options={PAYMENT_METHOD_OPTIONS}
           onChange={(paymentMethod) => onChange({ paymentMethod })}
-          width="w-44"
+          width="sm:w-44"
         />
         <FilterSelect
           label="Gateway"
@@ -81,10 +81,10 @@ export default function PaymentFilters({ searchTerm, onSearchChange, filters, on
           value={filters.planId}
           options={planOptions}
           onChange={(planId) => onChange({ planId })}
-          width="w-48"
+          width="sm:w-48"
         />
 
-        <div className="w-36 space-y-1.5">
+        <div className="w-full space-y-1.5 sm:w-36">
           <Label className="text-xs text-muted-foreground">Date From</Label>
           <Input
             type="date"
@@ -92,7 +92,7 @@ export default function PaymentFilters({ searchTerm, onSearchChange, filters, on
             onChange={(event) => onChange({ dateFrom: event.target.value })}
           />
         </div>
-        <div className="w-36 space-y-1.5">
+        <div className="w-full space-y-1.5 sm:w-36">
           <Label className="text-xs text-muted-foreground">Date To</Label>
           <Input
             type="date"
@@ -101,7 +101,12 @@ export default function PaymentFilters({ searchTerm, onSearchChange, filters, on
           />
         </div>
 
-        <Button type="button" variant="outline" onClick={onReset} className="gap-1.5">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onReset}
+          className="col-span-2 gap-1.5 sm:col-span-1"
+        >
           <RotateCcw className="size-3.5" aria-hidden="true" />
           Reset Filters
         </Button>

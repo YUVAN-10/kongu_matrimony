@@ -322,16 +322,16 @@ export async function createLinkedUser({ name, email, phone, tempPassword, gende
   await createUserDocument(uid, { name, email, phone, gender, city, admin })
   
   // 3. Check if profile already exists for this user (idempotency check)
-  console.log(`[ProfileService] Checking existing profile for user: ${uid}`)
   const existingProfile = await getProfileByUserId(uid)
-  
+
   if (existingProfile) {
-    console.log(`[ProfileService] Existing profile found: ${existingProfile.id}`)
+    if (import.meta.env.DEV) {
+      console.log(`[ProfileService] Existing profile found for user ${uid}: ${existingProfile.id}`)
+    }
     return { uid, profileId: existingProfile.id }
   }
-  
+
   // 4. No existing profile - create exactly one draft profile linked to this user
-  console.log(`[ProfileService] No profile found. Creating profile.`)
   const profileId = generateProfileId()
   const adminLabel = admin?.name || admin?.email || 'Admin'
   
@@ -359,8 +359,10 @@ export async function createLinkedUser({ name, email, phone, tempPassword, gende
   }
   
   await setDoc(doc(db, PROFILES_COLLECTION, profileId), removeUndefined(draftProfileData))
-  
-  console.log(`[ProfileService] Profile created: ${profileId}`)
+
+  if (import.meta.env.DEV) {
+    console.log(`[ProfileService] Profile created: ${profileId}`)
+  }
   logActivity({
     action: 'create',
     module: 'Profiles',

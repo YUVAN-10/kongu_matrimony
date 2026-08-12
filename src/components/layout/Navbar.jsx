@@ -17,7 +17,7 @@ export default function Navbar({ onMenuClick }) {
           type="button"
           variant="ghost"
           size="icon"
-          className="hover:bg-primary/5 lg:hidden"
+          className="shrink-0 hover:bg-primary/5 lg:hidden"
           onClick={onMenuClick}
           aria-label="Open navigation menu"
         >

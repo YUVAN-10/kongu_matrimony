@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import Sidebar from '@/components/layout/Sidebar'
 import ToastStack from '@/components/layout/ToastStack'
+import BackButton from '@/components/layout/BackButton'
 import { NotificationProvider } from '@/context/NotificationContext'
 
 export default function AdminLayout() {
@@ -17,6 +18,7 @@ export default function AdminLayout() {
 
         <main className="pt-[72px] lg:pl-[260px]">
           <div className="p-4 sm:p-6 lg:p-8">
+            <BackButton />
             <Outlet />
           </div>
         </main>

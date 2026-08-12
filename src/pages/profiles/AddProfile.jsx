@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Controller, useForm } from 'react-hook-form'
 import { CircleAlert, Loader2, Search, UserCheck, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,8 +9,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import ProfileForm from '@/components/profiles/ProfileForm'
 import { useAuth } from '@/hooks/useAuth'
-import { searchUsersOnce } from '@/services/userService'
-import { generateProfileId, createLinkedUser } from '@/services/profileService'
+import { searchUsersOnce, searchUsersByPhone, searchUsersByEmail, searchUsersByName } from '@/services/userService'
+import { generateProfileId, createLinkedUser, getProfileByUserId } from '@/services/profileService'
 import { GENDER_OPTIONS } from '@/constants/profileOptions'
 
 function ExistingUserPicker({ onSelect }) {
@@ -18,6 +18,7 @@ function ExistingUserPicker({ onSelect }) {
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [checkingUserId, setCheckingUserId] = useState(null)
 
   async function handleSearch(event) {
     event.preventDefault()
@@ -28,6 +29,15 @@ function ExistingUserPicker({ onSelect }) {
       setSearched(true)
     } finally {
       setSearching(false)
+    }
+  }
+
+  async function handleSelect(user) {
+    setCheckingUserId(user.id)
+    try {
+      await onSelect(user)
+    } finally {
+      setCheckingUserId(null)
     }
   }
 
@@ -63,7 +73,15 @@ function ExistingUserPicker({ onSelect }) {
                   {user.email} · {user.phone}
                 </p>
               </div>
-              <Button type="button" size="sm" variant="outline" onClick={() => onSelect(user)}>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={checkingUserId === user.id}
+                onClick={() => handleSelect(user)}
+                className="gap-1.5"
+              >
+                {checkingUserId === user.id && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
                 Select
               </Button>
             </li>
@@ -76,21 +94,50 @@ function ExistingUserPicker({ onSelect }) {
 
 function NewUserForm({ onCreated, admin }) {
   const [submitError, setSubmitError] = useState(null)
+  const [nameDuplicateWarning, setNameDuplicateWarning] = useState(null)
   const {
     register,
     handleSubmit,
     control,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm({ defaultValues: { name: '', email: '', phone: '', tempPassword: '', gender: '' } })
 
-  async function onSubmit(data) {
+  async function onSubmit(data, { skipNameCheck = false } = {}) {
     setSubmitError(null)
     try {
+      // Same duplicate rules as Add User: phone/email are strict, name is a
+      // warning only — this form used to skip these checks entirely.
+      const existingByPhone = await searchUsersByPhone(data.phone)
+      if (existingByPhone.length > 0) {
+        setSubmitError('A user with this phone number already exists.')
+        return
+      }
+
+      const existingByEmail = await searchUsersByEmail(data.email)
+      if (existingByEmail.length > 0) {
+        setSubmitError('A user with this email address already exists.')
+        return
+      }
+
+      if (!skipNameCheck) {
+        const existingByName = await searchUsersByName(data.name)
+        if (existingByName.length > 0) {
+          setNameDuplicateWarning(data.name)
+          return
+        }
+      }
+
       const { uid, profileId } = await createLinkedUser({ ...data, admin })
       onCreated({ uid, profileId, ...data })
     } catch (error) {
       setSubmitError(error.message || 'Could not create user. Please try again.')
     }
+  }
+
+  async function handleCreateAnyway() {
+    setNameDuplicateWarning(null)
+    await onSubmit(getValues(), { skipNameCheck: true })
   }
 
   return (
@@ -102,6 +149,29 @@ function NewUserForm({ onCreated, admin }) {
         >
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>{submitError}</span>
+        </div>
+      )}
+
+      {nameDuplicateWarning && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg border border-secondary/30 bg-secondary/10 px-4 py-3 text-sm"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0 text-secondary-foreground" aria-hidden="true" />
+          <div className="flex-1 space-y-2">
+            <span>
+              A user named &quot;{nameDuplicateWarning}&quot; already exists. This might be a
+              different person with the same name — create anyway?
+            </span>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={handleCreateAnyway} disabled={isSubmitting}>
+                Create Anyway
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setNameDuplicateWarning(null)}>
+                Let Me Check
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -187,8 +257,20 @@ export default function AddProfile() {
   const [linkMode, setLinkMode] = useState('existing')
   const [linkedUser, setLinkedUser] = useState(null)
   const [createdNewUser, setCreatedNewUser] = useState(false)
+  const [existingProfileNotice, setExistingProfileNotice] = useState(null)
 
-  function handleExistingSelected(user) {
+  // One user = one profile. Selecting a user who already has one must NOT
+  // create a second profile document — that would leave getProfileByUserId
+  // (limit(1), no orderBy) pointing at an arbitrary one of the two for every
+  // other module (Assign Subscription, New Profile Approvals, Profile
+  // Change Approvals) that looks up "the" profile for that user.
+  async function handleExistingSelected(user) {
+    setExistingProfileNotice(null)
+    const existingProfile = await getProfileByUserId(user.id)
+    if (existingProfile) {
+      setExistingProfileNotice({ profileId: existingProfile.id, userName: user.name || user.email })
+      return
+    }
     setLinkedUser({ uid: user.id, name: user.name, email: user.email, phone: user.phone, gender: user.gender })
     setCreatedNewUser(false)
   }
@@ -221,6 +303,24 @@ export default function AddProfile() {
             new one to get started.
           </p>
         </div>
+
+        {existingProfileNotice && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-lg border border-secondary/30 bg-secondary/10 px-4 py-3 text-sm"
+          >
+            <CircleAlert className="mt-0.5 size-4 shrink-0 text-secondary-foreground" aria-hidden="true" />
+            <div className="flex-1">
+              <p>
+                {existingProfileNotice.userName} already has a profile. One user can only have one
+                profile, so a new one wasn&apos;t created.
+              </p>
+              <Button asChild size="sm" variant="outline" className="mt-2">
+                <Link to={`/profiles/${existingProfileNotice.profileId}/edit`}>Edit Their Existing Profile</Link>
+              </Button>
+            </div>
+          </div>
+        )}
 
         <Card className="border-border/70 shadow-sm">
           <CardHeader className="gap-3">

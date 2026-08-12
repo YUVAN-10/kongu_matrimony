@@ -12,6 +12,8 @@ import {
   doc,
   setDoc,
   updateDoc,
+  deleteDoc,
+  runTransaction,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore'
@@ -20,6 +22,7 @@ import { formatDate, endOfDay } from '@/utils/helpers'
 import { logActivity } from '@/services/activityLogService'
 
 const USERS_COLLECTION = 'users'
+const PHONE_INDEX_COLLECTION = 'phoneIndex'
 
 /**
  * Firestore `where` constraints shared by every query variant below —
@@ -161,15 +164,72 @@ export async function searchUsersOnce(term) {
 }
 
 /**
+ * Digits-only comparison/storage form of a phone number — "9876543210",
+ * "98765 43210", and "+91-9876543210" must all be treated as the same
+ * number for duplicate detection, which a plain string match can't do.
+ * Applied both when storing a phone (createUserDocument/updateUser) and
+ * when checking for a duplicate, so new records stay comparable going
+ * forward — this doesn't retroactively reformat already-stored numbers.
+ */
+function normalizePhone(phone) {
+  return String(phone || '').replace(/\D/g, '')
+}
+
+/**
+ * Atomic uniqueness lock for phone numbers, backing `phoneIndex/{normalized
+ * phone}`. `searchUsersByPhone` alone has a check-then-create race: two
+ * simultaneous Add User submissions for the same phone (different emails)
+ * could both pass that check and both succeed. This transaction closes that
+ * gap — the loser's transaction sees the reservation `tx.get` already
+ * resolved to an existing doc owned by someone else and throws, instead of
+ * racing to a duplicate `users` document.
+ *
+ * `userId` may be null when reserving before the Firebase Auth account (and
+ * therefore its uid) exists yet — see createLinkedUser, which reserves
+ * immediately after the Auth account is created but before the Firestore
+ * user document is written, so no `users` doc can ever be created with a
+ * phone that's already spoken for.
+ */
+export async function reservePhoneNumber(phone, userId = null) {
+  const normalized = normalizePhone(phone)
+  if (!normalized) throw new Error('A valid phone number is required.')
+
+  const phoneRef = doc(db, PHONE_INDEX_COLLECTION, normalized)
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(phoneRef)
+    if (snap.exists() && snap.data().userId !== userId) {
+      throw new Error('A user with this phone number already exists.')
+    }
+    tx.set(phoneRef, { userId, reservedAt: serverTimestamp() })
+  })
+  return normalized
+}
+
+/** Frees a phone number reservation — used on rollback (a later step in
+ * account creation failed) and when a user's phone changes (the old number
+ * becomes available again). Best-effort: a failure here shouldn't block the
+ * business operation that triggered it. */
+export async function releasePhoneReservation(phone) {
+  const normalized = normalizePhone(phone)
+  if (!normalized) return
+  try {
+    await deleteDoc(doc(db, PHONE_INDEX_COLLECTION, normalized))
+  } catch (error) {
+    console.error('[userService] Failed to release phone reservation (non-blocking):', error)
+  }
+}
+
+/**
  * Check if a user with the given phone number already exists
  * Used for duplicate checking during user creation
  */
 export async function searchUsersByPhone(phone) {
-  if (!phone?.trim()) return []
-  
+  const normalized = normalizePhone(phone)
+  if (!normalized) return []
+
   const phoneQuery = query(
     collection(db, USERS_COLLECTION),
-    where('phone', '==', phone.trim()),
+    where('phone', '==', normalized),
     where('status', 'in', ['active', 'blocked']),
     limit(1)
   )
@@ -183,7 +243,7 @@ export async function searchUsersByPhone(phone) {
  */
 export async function searchUsersByEmail(email) {
   if (!email?.trim()) return []
-  
+
   const emailQuery = query(
     collection(db, USERS_COLLECTION),
     where('email', '==', email.trim().toLowerCase()),
@@ -194,17 +254,48 @@ export async function searchUsersByEmail(email) {
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
 }
 
+const NAME_DUPLICATE_CHECK_CAP = 1000
+
+/**
+ * Warning-only check (not a hard block, per spec) for an existing user with
+ * the same name, trim + case-insensitive. Firestore has no native
+ * case-insensitive query, and adding a normalized-name mirror field would be
+ * a schema change — so this does a capped fetch and compares client-side,
+ * same cap pattern already used by the search fallbacks in this file.
+ */
+export async function searchUsersByName(name) {
+  const normalized = name?.trim().toLowerCase()
+  if (!normalized) return []
+
+  const usersQuery = query(
+    collection(db, USERS_COLLECTION),
+    where('status', 'in', ['active', 'blocked']),
+    limit(NAME_DUPLICATE_CHECK_CAP)
+  )
+  const snapshot = await getDocs(usersQuery)
+  return snapshot.docs
+    .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+    .filter((user) => user.name?.trim().toLowerCase() === normalized)
+}
+
 /**
  * Writes the Firestore users/{uid} document for a brand-new account created
  * from the Add Profile page. The Firebase Auth user itself is created
  * separately via authService.createUserAccount (which returns this uid).
+ *
+ * Reserves the phone number transactionally BEFORE writing the user
+ * document — if two admins raced on the same phone, the loser fails here
+ * with no `users` doc ever written, instead of both succeeding (the gap
+ * `searchUsersByPhone`'s check-then-create alone can't close).
  */
 export async function createUserDocument(uid, { name, email, phone, gender, city, admin }) {
   const adminLabel = admin?.name || admin?.email || 'Admin'
+  await reservePhoneNumber(phone, uid)
+
   await setDoc(doc(db, USERS_COLLECTION, uid), {
     name,
     email,
-    phone,
+    phone: normalizePhone(phone),
     gender,
     ...(city?.trim() && { city: city.trim() }),
     status: 'active',
@@ -224,17 +315,35 @@ export async function createUserDocument(uid, { name, email, phone, gender, city
   })
 }
 
+/**
+ * Keeps the phoneIndex reservation in sync when a phone number actually
+ * changes: reserve the new number first (so a conflict fails before
+ * anything else changes), update the user, then release the old number —
+ * that order never leaves a window where the account holds zero reservation.
+ */
 export async function updateUser(userId, data, { admin } = {}) {
+  const current = await getUserById(userId)
+  const newPhone = normalizePhone(data.phone)
+  const phoneChanged = current && current.phone !== newPhone
+
+  if (phoneChanged) {
+    await reservePhoneNumber(newPhone, userId)
+  }
+
   const payload = {
     name: data.name,
     email: data.email,
-    phone: data.phone,
+    phone: newPhone,
     gender: data.gender,
     city: data.city || null,
     updatedAt: serverTimestamp(),
   }
 
   await updateDoc(doc(db, USERS_COLLECTION, userId), payload)
+
+  if (phoneChanged && current.phone) {
+    await releasePhoneReservation(current.phone)
+  }
 
   logActivity({
     action: 'update',
