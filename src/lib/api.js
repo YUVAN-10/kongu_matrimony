@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/+$/, '')
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'https://9bbc6zsl-4000.inc1.devtunnels.ms/api').replace(/\/+$/, '')
 
 const TOKEN_KEY = 'kongu_admin_token'
 const ADMIN_KEY = 'kongu_admin_user'

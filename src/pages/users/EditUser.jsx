@@ -17,15 +17,25 @@ export default function EditUser() {
   const navigate = useNavigate()
   const [submitError, setSubmitError] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [initialValues, setInitialValues] = useState(null)
 
   const {
     register,
     handleSubmit,
     control,
-    setValue,
+    reset,
     formState: { errors, isSubmitting },
-  } = useForm({ defaultValues: { name: '', email: '', phone: '', gender: '', city: '' } })
+  } = useForm({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      gender: '',
+      role: 'user',
+      status: 'active',
+      isVerified: false,
+    },
+  })
 
   useEffect(() => {
     if (!userId) return
@@ -39,12 +49,15 @@ export default function EditUser() {
           setSubmitError('User not found.')
           return
         }
-        setInitialValues(user)
-        setValue('name', user.name || '')
-        setValue('email', user.email || '')
-        setValue('phone', user.phone || '')
-        setValue('gender', user.gender || '')
-        setValue('city', user.city || '')
+        reset({
+          name: user.name || user.fullName || '',
+          email: user.email || '',
+          phone: user.phone || user.phoneNumber || '',
+          gender: user.gender || '',
+          role: user.role || 'user',
+          status: user.status || 'active',
+          isVerified: Boolean(user.isVerified),
+        })
       })
       .catch((error) => {
         if (!cancelled) {
@@ -58,7 +71,7 @@ export default function EditUser() {
     return () => {
       cancelled = true
     }
-  }, [userId, setValue])
+  }, [userId, reset])
 
   async function onSubmit(data) {
     setSubmitError(null)

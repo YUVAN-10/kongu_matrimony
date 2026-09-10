@@ -1,61 +1,42 @@
-# Kongu Matrimony - Full-Stack Application
+# Kongu Matrimony - Admin Dashboard
 
-This repository is structured as a **Full-Stack Monorepo** containing two cleanly separated folders:
-- **`client/`**: React 19 + Vite Admin Dashboard (Frontend)
-- **`server/`**: Node.js + Express REST API (Backend)
+This repository contains the **React 19 + Vite Admin Dashboard** for Kongu Matrimony, connecting to the external REST API backend (`https://9bbc6zsl-4000.inc1.devtunnels.ms`).
 
 ---
 
-## 📁 Monorepo Folder Structure
+## 📁 Project Structure
 
 ```text
 kongu_admin/
-├── client/                     # 🌐 Frontend React + Vite Admin Panel
-│   ├── public/                 # Static assets & logos
-│   ├── src/                    # React components, hooks, routes, services
-│   │   ├── components/         # Modular UI & Feature components
-│   │   ├── constants/          # Navigation menu and constants
-│   │   ├── context/            # Auth & Notification providers
-│   │   ├── hooks/              # Custom data fetching hooks
-│   │   ├── layouts/            # Layout shells
-│   │   ├── lib/                # Centralized REST API client (api.js)
-│   │   ├── pages/              # Routed pages (Dashboard, Users, Privacy, etc.)
-│   │   ├── routes/             # AppRoutes configuration
-│   │   ├── services/           # Service layer
-│   │   └── styles/             # Global Tailwind styles
-│   ├── .env                    # Client environment (VITE_API_BASE_URL)
-│   ├── package.json            # Frontend dependencies & scripts
-│   └── vite.config.js          # Vite build config with code splitting
-│
-├── server/                     # 🚀 Backend Node.js & Express REST API
-│   ├── middleware/             # JWT auth & security middlewares
-│   ├── routes/                 # REST API endpoints (users, payments, etc.)
-│   ├── .env                    # Server environment (PORT, JWT_SECRET)
-│   ├── package.json            # Backend dependencies & scripts
-│   └── server.js               # Express application entry point
-│
-├── package.json                # Root workspace runner scripts
-└── README.md                   # Project documentation
+├── public/                 # Static assets & favicon
+├── src/                    # React components, hooks, routes, services
+│   ├── components/         # Modular UI & Feature components
+│   ├── constants/          # Navigation menu and constants
+│   ├── context/            # Auth & Notification providers
+│   ├── hooks/              # Custom data fetching hooks
+│   ├── layouts/            # Layout shells
+│   ├── lib/                # Centralized REST API client (api.js)
+│   ├── pages/              # Routed pages (Dashboard, Users, Approvals, Subscriptions, Payments, etc.)
+│   ├── routes/             # AppRoutes & ProtectedRoute configuration
+│   ├── services/           # API Service layer
+│   └── styles/             # Global Tailwind CSS styles
+├── .env                    # Environment config (VITE_API_BASE_URL)
+├── package.json            # Dependencies & scripts
+├── vite.config.js          # Vite build & proxy config
+└── README.md               # Project documentation
 ```
 
 ---
 
-## ⚡ Quick Start Commands (From Project Root)
+## ⚡ Quick Start Commands
 
-### 1. Run Frontend (Client)
+### 1. Start Development Server
 ```bash
-npm run client
-# Or: npm run dev
+npm run dev
 ```
 *Accessible at: `http://localhost:5173`*
 
-### 2. Run Backend (Server)
-```bash
-npm run server
-```
-*Accessible at: `http://localhost:5000` (Health Check: `http://localhost:5000/api/health`)*
-
-### 3. Build Frontend for Production
+### 2. Build for Production
 ```bash
 npm run build
 ```

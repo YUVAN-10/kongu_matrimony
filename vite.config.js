@@ -11,6 +11,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'https://9bbc6zsl-4000.inc1.devtunnels.ms',
+        changeOrigin: true,
+        secure: false,
+        headers: {
+          'bypass-tunnel-reminder': 'true',
+        },
+      },
+    },
+  },
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {

@@ -1,5 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Loader2, ShieldCheck } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 import AdminLayout from '@/layouts/AdminLayout'
+import AuthLayout from '@/layouts/AuthLayout'
+import Login from '@/pages/auth/Login'
 import Dashboard from '@/pages/dashboard/Dashboard'
 import Users from '@/pages/users/Users'
 import AddUser from '@/pages/users/AddUser'
@@ -23,10 +27,78 @@ import RefundPayment from '@/pages/payments/RefundPayment'
 import PrivacyPolicy from '@/pages/privacy/PrivacyPolicy'
 import DeleteAccount from '@/pages/privacy/DeleteAccount'
 
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
+          <ShieldCheck className="size-8" />
+        </div>
+        <div className="mt-4 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Loader2 className="size-4 animate-spin text-primary" />
+          <span>Authenticating admin session...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  return children
+}
+
+function PublicAuthRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
+          <ShieldCheck className="size-8" />
+        </div>
+        <div className="mt-4 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Loader2 className="size-4 animate-spin text-primary" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route element={<AdminLayout />}>
+      {/* Public Auth Routes */}
+      <Route element={<AuthLayout />}>
+        <Route
+          path="/login"
+          element={
+            <PublicAuthRoute>
+              <Login />
+            </PublicAuthRoute>
+          }
+        />
+      </Route>
+
+      {/* Protected Admin Routes */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
         <Route path="/users/add" element={<AddUser />} />
@@ -52,10 +124,12 @@ export default function AppRoutes() {
         <Route path="/delete-account" element={<DeleteAccount />} />
       </Route>
 
+      {/* Standalone Public Pages */}
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/delete-account" element={<DeleteAccount />} />
+      
+      {/* Redirections */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/login" element={<Navigate to="/dashboard" replace />} />
       <Route path="/profiles" element={<Navigate to="/dashboard" replace />} />
       <Route path="/profiles/drafts" element={<Navigate to="/dashboard" replace />} />
       <Route path="/activity-logs" element={<Navigate to="/dashboard" replace />} />
