@@ -193,7 +193,6 @@ export default function UserDetails({ userId, open, onOpenChange, onStatusChange
                   label="Subscription"
                   value={user.isPremium ? 'Active (Premium)' : 'Free Tier'}
                 />
-                <DetailRow icon={Shield} label="Role" value={user.role} />
               </div>
 
               {user.subscriptions?.length > 0 && (

@@ -75,7 +75,7 @@ export default function AddUser() {
                 <Label htmlFor="add-user-name">Full Name *</Label>
                 <Input
                   id="add-user-name"
-                  placeholder="e.g. Karthikeyan"
+                  placeholder="Enter full name"
                   {...register('name', { required: 'Full name is required.' })}
                 />
                 {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
@@ -86,7 +86,7 @@ export default function AddUser() {
                 <Input
                   id="add-user-email"
                   type="email"
-                  placeholder="e.g. karthik@example.com"
+                  placeholder="Enter email address"
                   {...register('email', {
                     required: 'Email is required.',
                     pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Enter a valid email address.' },
@@ -99,7 +99,7 @@ export default function AddUser() {
                 <Label htmlFor="add-user-phone">Mobile Number *</Label>
                 <Input
                   id="add-user-phone"
-                  placeholder="e.g. 9876543210"
+                  placeholder="Enter mobile number"
                   {...register('phone', {
                     required: 'Mobile number is required.',
                     minLength: { value: 10, message: 'Must be at least 10 digits.' },
@@ -113,7 +113,7 @@ export default function AddUser() {
                 <Input
                   id="add-user-password"
                   type="text"
-                  placeholder="e.g. Password123"
+                  placeholder="Enter temporary password"
                   {...register('tempPassword', {
                     required: 'Temporary password is required.',
                     minLength: { value: 6, message: 'Must be at least 6 characters.' },
@@ -150,7 +150,7 @@ export default function AddUser() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="add-user-city">City</Label>
-                <Input id="add-user-city" placeholder="e.g. Chennai" {...register('city')} />
+                <Input id="add-user-city" placeholder="Enter city" {...register('city')} />
               </div>
             </div>
 

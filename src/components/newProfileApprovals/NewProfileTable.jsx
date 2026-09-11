@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import ProfileStatusBadge from '@/components/profiles/ProfileStatusBadge'
 import { formatDate } from '@/utils/helpers'
 
-const COLUMN_COUNT = 9
+const COLUMN_COUNT = 10
 
 export default function NewProfileTable({ profiles, loading, page, hasMore, onNextPage, onPreviousPage, onReview }) {
   return (
@@ -12,6 +12,7 @@ export default function NewProfileTable({ profiles, loading, page, hasMore, onNe
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50 text-left text-xs font-medium text-muted-foreground uppercase">
+              <th className="px-4 py-3">S.No</th>
               <th className="px-4 py-3">Photo</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">User</th>
@@ -36,7 +37,7 @@ export default function NewProfileTable({ profiles, loading, page, hasMore, onNe
                 </td>
               </tr>
             ) : (
-              profiles.map((profile) => {
+              profiles.map((profile, index) => {
                 const photoUrl = profile.profileImageUrl || profile.photos?.main?.url || null
                 const name = profile.fullName || profile.personal?.fullName || 'Unnamed'
                 const user = profile.user || {}
@@ -49,6 +50,9 @@ export default function NewProfileTable({ profiles, loading, page, hasMore, onNe
 
                 return (
                   <tr key={profile.id} className="border-b border-border/60 last:border-0 hover:bg-muted/50">
+                    <td className="px-4 py-3 text-muted-foreground font-medium">
+                      {(page - 1) * 10 + index + 1}
+                    </td>
                     <td className="px-4 py-3">
                       {photoUrl ? (
                         <img

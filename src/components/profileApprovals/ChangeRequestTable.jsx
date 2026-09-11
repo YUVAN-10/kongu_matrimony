@@ -18,6 +18,7 @@ export default function ChangeRequestTable({
         <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/50">
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">S.No</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Photo</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Profile</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Submitted</th>
@@ -29,19 +30,22 @@ export default function ChangeRequestTable({
           <tbody>
             {loading && requests.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   Loading change requests...
                 </td>
               </tr>
             ) : requests.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No profile change requests found.
                 </td>
               </tr>
             ) : (
-              requests.map((request) => (
+              requests.map((request, index) => (
                 <tr key={request.id} className="border-b last:border-0 hover:bg-muted/50">
+                  <td className="px-4 py-3 text-muted-foreground font-medium">
+                    {(page - 1) * 10 + index + 1}
+                  </td>
                   <td className="px-4 py-3">
                     {request.profilePhoto ? (
                       <img

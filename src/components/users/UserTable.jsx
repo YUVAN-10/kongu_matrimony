@@ -18,7 +18,7 @@ const SORT_OPTIONS = [
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
 
-const COLUMN_COUNT = 10
+const COLUMN_COUNT = 11
 
 export default function UserTable({
   users,
@@ -63,6 +63,7 @@ export default function UserTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase">
+              <th className="px-4 py-3 font-medium">S.No</th>
               <th className="px-4 py-3 font-medium">Photo</th>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Phone</th>
@@ -85,7 +86,7 @@ export default function UserTable({
                 </td>
               </tr>
             ) : (
-              users.map((user) => (
+              users.map((user, index) => (
                 <tr
                   key={user.id}
                   className={cn(
@@ -93,6 +94,9 @@ export default function UserTable({
                     user.status === 'blocked' && 'bg-destructive/5'
                   )}
                 >
+                  <td className="px-4 py-3 text-muted-foreground font-medium">
+                    {(page - 1) * pageSize + index + 1}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-muted">
                       {user.photoURL ? (
