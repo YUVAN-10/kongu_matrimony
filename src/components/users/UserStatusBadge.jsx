@@ -1,20 +1,21 @@
 import { cn } from '@/lib/utils'
 
 const STATUS_STYLES = {
-  active: 'bg-success/10 text-success',
-  blocked: 'bg-destructive/10 text-destructive',
+  active: 'bg-success/15 text-success font-semibold border border-success/30',
+  blocked: 'bg-destructive/15 text-destructive font-semibold border border-destructive/30',
   deleted: 'bg-muted text-muted-foreground',
 }
 
 export default function UserStatusBadge({ status }) {
+  const normalized = (status || 'active').toLowerCase()
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize',
-        STATUS_STYLES[status] || 'bg-muted text-muted-foreground'
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider',
+        STATUS_STYLES[normalized] || 'bg-muted text-muted-foreground'
       )}
     >
-      {status || 'unknown'}
+      {status || 'UNKNOWN'}
     </span>
   )
 }

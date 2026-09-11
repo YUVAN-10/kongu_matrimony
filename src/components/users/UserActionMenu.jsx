@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export default function UserActionMenu({ user, onView, onEdit, onBlock, onUnblock }) {
-  const isBlocked = user.status === 'blocked'
+  const isBlocked = (user?.status || '').toUpperCase() === 'BLOCKED' || Boolean(user?.isBlocked)
 
   return (
     <DropdownMenu>
@@ -18,33 +18,38 @@ export default function UserActionMenu({ user, onView, onEdit, onBlock, onUnbloc
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`Actions for ${user.name || 'user'}`}
+          aria-label={`Actions for ${user?.name || 'user'}`}
         >
           <MoreVertical className="size-4" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem onClick={() => onView(user.id)} className="cursor-pointer">
-          <Eye className="size-4" aria-hidden="true" />
-          View
+        <DropdownMenuItem onClick={() => onView(user?.id)} className="cursor-pointer">
+          <Eye className="mr-2 size-4" aria-hidden="true" />
+          View Details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onEdit(user.id)} className="cursor-pointer">
-          <Pencil className="size-4" aria-hidden="true" />
-          Edit
+        <DropdownMenuItem onClick={() => onEdit(user?.id)} className="cursor-pointer">
+          <Pencil className="mr-2 size-4" aria-hidden="true" />
+          Edit User
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {isBlocked ? (
-          <DropdownMenuItem onClick={() => onUnblock(user)} className="cursor-pointer">
-            <ShieldCheck className="size-4" aria-hidden="true" />
-            Unblock
+          <DropdownMenuItem
+            onClick={() => onUnblock(user)}
+            className="cursor-pointer text-success focus:text-success"
+          >
+            <ShieldCheck className="mr-2 size-4" aria-hidden="true" />
+            Unblock User
           </DropdownMenuItem>
         ) : (
-          <DropdownMenuItem onClick={() => onBlock(user)} className="cursor-pointer">
-            <Ban className="size-4" aria-hidden="true" />
-            Block
+          <DropdownMenuItem
+            onClick={() => onBlock(user)}
+            className="cursor-pointer text-destructive focus:text-destructive"
+          >
+            <Ban className="mr-2 size-4" aria-hidden="true" />
+            Block User
           </DropdownMenuItem>
         )}
-
       </DropdownMenuContent>
     </DropdownMenu>
   )

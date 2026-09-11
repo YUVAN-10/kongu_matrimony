@@ -1,236 +1,95 @@
 import api from '@/lib/api'
-import { logActivity } from '@/services/activityLogService'
-import { getProfileById as getProfileByIdFromProfileService } from '@/services/profileService'
 
-export const getProfileById = getProfileByIdFromProfileService
-
-export async function getProfileByUserId(userId) {
-  if (!userId) return null
-  try {
-    const response = await api.get(`/profiles/user/${userId}`)
-    return response?.profile || response?.data || response
-  } catch {
-    const res = await api.get('/profiles', { userId, limit: 1 })
-    const list = Array.isArray(res) ? res : (res?.profiles || res?.data || [])
-    return list[0] || null
-  }
-}
-
-export async function createProfileChangeRequest({ profileId, userId, changes, submittedBy }) {
-  if (!changes || Object.keys(changes).length === 0) {
-    throw new Error('No profile changes detected.')
-  }
-
-  const payload = {
-    profileId,
-    userId,
-    changes,
-    submittedBy,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-  }
-
-  const response = await api.post('/profile-change-requests', payload)
-  const requestId = response?.requestId || response?.id || response?.data?.id || `req_${Date.now()}`
-
-  logActivity({
-    action: 'submit_profile_change',
-    module: 'Profiles',
-    targetType: 'profile_change_request',
-    targetId: requestId,
-    description: `Submitted ${Object.keys(changes).length} profile change(s) for review`,
-    newData: { profileId, userId, status: 'pending' },
-    admin: { uid: submittedBy, name: 'Client' },
+/**
+ * 4.3 Get Profile Change Requests
+ * GET /api/admin/profile-change-requests
+ * Query params: page, limit, status (default PENDING)
+ */
+export async function getProfileChangeRequests({ page = 1, limit = 10, status = 'PENDING' } = {}) {
+  const response = await api.get('/admin/profile-change-requests', {
+    page,
+    limit,
+    status: status ? status.toUpperCase() : undefined,
   })
-
-  return requestId
-}
-
-export function subscribeToPendingChangeRequests(onData, onError) {
-  let isCancelled = false
-
-  async function fetchRequests() {
-    try {
-      const response = await api.get('/profile-change-requests', { status: 'pending' })
-      const list = Array.isArray(response) ? response : (response?.requests || response?.data || [])
-      if (!isCancelled) onData(list)
-    } catch (err) {
-      if (!isCancelled && onError) onError(err)
-    }
-  }
-
-  fetchRequests()
-
-  return () => {
-    isCancelled = true
-  }
-}
-
-export function subscribeToApprovedChangeRequests(onData, onError) {
-  let isCancelled = false
-
-  async function fetchRequests() {
-    try {
-      const response = await api.get('/profile-change-requests', { status: 'approved' })
-      const list = Array.isArray(response) ? response : (response?.requests || response?.data || [])
-      if (!isCancelled) onData(list)
-    } catch (err) {
-      if (!isCancelled && onError) onError(err)
-    }
-  }
-
-  fetchRequests()
-
-  return () => {
-    isCancelled = true
-  }
-}
-
-export function subscribeToRejectedChangeRequests(onData, onError) {
-  let isCancelled = false
-
-  async function fetchRequests() {
-    try {
-      const response = await api.get('/profile-change-requests', { status: 'rejected' })
-      const list = Array.isArray(response) ? response : (response?.requests || response?.data || [])
-      if (!isCancelled) onData(list)
-    } catch (err) {
-      if (!isCancelled && onError) onError(err)
-    }
-  }
-
-  fetchRequests()
-
-  return () => {
-    isCancelled = true
-  }
-}
-
-export function subscribeToChangeRequests(onData, onError) {
-  let isCancelled = false
-
-  async function fetchRequests() {
-    try {
-      const response = await api.get('/profile-change-requests', { limit: 2000 })
-      const list = Array.isArray(response) ? response : (response?.requests || response?.data || [])
-      if (!isCancelled) onData(list)
-    } catch (err) {
-      if (!isCancelled && onError) onError(err)
-    }
-  }
-
-  fetchRequests()
-
-  return () => {
-    isCancelled = true
+  const data = response?.data || response
+  return {
+    requests: data?.requests || [],
+    pagination: data?.pagination || { page, limit, total: 0, totalPages: 1 },
   }
 }
 
 export async function getChangeRequestById(requestId) {
-  const response = await api.get(`/profile-change-requests/${requestId}`)
-  return response?.request || response?.data || response
+  const response = await api.get(`/admin/profile-change-requests/${requestId}`)
+  return response?.data || response?.request || response
 }
 
-export async function approveProfileChangeRequest({ requestId, admin }) {
-  const request = await getChangeRequestById(requestId)
-  if (!request) {
-    throw new Error('This change request no longer exists.')
-  }
-  if (request.status !== 'pending') {
-    throw new Error('This change request has already been reviewed.')
-  }
-
-  const now = new Date().toISOString()
-  const payload = {
-    status: 'approved',
-    reviewedBy: admin?.uid || admin?.id || null,
-    reviewedAt: now,
-  }
-
-  await api.post(`/profile-change-requests/${requestId}/approve`, payload).catch(async () => {
-    await api.put(`/profile-change-requests/${requestId}`, payload)
+/**
+ * 4.4 Review Profile Change Request (Approve / Reject)
+ * PATCH /api/admin/profile-change-requests/:id/status
+ * Body: { status: "APPROVED" | "REJECTED" }
+ */
+export async function reviewProfileChangeRequest(requestId, status) {
+  const normalizedStatus = status.toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED'
+  const response = await api.patch(`/admin/profile-change-requests/${requestId}/status`, {
+    status: normalizedStatus,
   })
-
-  const changes = request.changes || {}
-  const changeCount = Object.keys(changes).length
-
-  logActivity({
-    action: 'approve_profile_change',
-    module: 'Profiles',
-    targetType: 'profile_change_request',
-    targetId: requestId,
-    description: `Approved ${changeCount} profile change(s) for profile "${request.profileId}"`,
-    newData: { profileId: request.profileId, status: 'approved' },
-    admin,
-  })
+  return response?.data || response
 }
 
-export async function rejectProfileChangeRequest({ requestId, admin, rejectionType, rejectionReason }) {
-  if (!rejectionType?.trim()) {
-    throw new Error('A rejection type is required.')
-  }
-  const trimmedReason = rejectionReason?.trim()
-  if (!trimmedReason) {
-    throw new Error('A rejection reason is required.')
-  }
-
-  const request = await getChangeRequestById(requestId)
-  if (!request) {
-    throw new Error('This change request no longer exists.')
-  }
-  if (request.status !== 'pending') {
-    throw new Error('This change request has already been reviewed.')
-  }
-
-  const now = new Date().toISOString()
-  const payload = {
-    status: 'rejected',
-    reviewedBy: admin?.uid || admin?.id || null,
-    reviewedAt: now,
-    rejectionType,
-    rejectionReason: trimmedReason,
-  }
-
-  await api.post(`/profile-change-requests/${requestId}/reject`, payload).catch(async () => {
-    await api.put(`/profile-change-requests/${requestId}`, payload)
-  })
-
-  logActivity({
-    action: 'reject_profile_change',
-    module: 'Profiles',
-    targetType: 'profile_change_request',
-    targetId: requestId,
-    description: `Rejected profile change request for profile "${request.profileId}" — [${rejectionType}] ${trimmedReason}`,
-    newData: { profileId: request.profileId, status: 'rejected', rejectionType, rejectionReason: trimmedReason },
-    admin,
-  })
+export async function approveChangeRequest(requestId) {
+  return reviewProfileChangeRequest(requestId, 'APPROVED')
 }
 
-export async function getPendingChangeRequestCount() {
-  try {
-    const response = await api.get('/profile-change-requests/count', { status: 'pending' })
-    return typeof response?.count === 'number' ? response.count : 0
-  } catch {
-    const res = await api.get('/profile-change-requests', { status: 'pending' })
-    return Array.isArray(res) ? res.length : (res?.requests?.length || 0)
+export async function rejectChangeRequest(requestId) {
+  return reviewProfileChangeRequest(requestId, 'REJECTED')
+}
+
+export const approveProfileChangeRequest = approveChangeRequest
+export const rejectProfileChangeRequest = rejectChangeRequest
+
+export function subscribeToChangeRequests(onData, onError) {
+  let isCancelled = false
+  getProfileChangeRequests({ page: 1, limit: 100, status: 'PENDING' })
+    .then((res) => {
+      if (!isCancelled) onData(res.requests)
+    })
+    .catch((err) => {
+      if (!isCancelled && onError) onError(err)
+    })
+
+  return () => {
+    isCancelled = true
   }
 }
 
 export function subscribeToPendingCount(onCount, onError) {
   let isCancelled = false
-
-  async function fetchCount() {
-    try {
-      const count = await getPendingChangeRequestCount()
-      if (!isCancelled) onCount(count)
-    } catch (err) {
+  getProfileChangeRequests({ page: 1, limit: 1, status: 'PENDING' })
+    .then((res) => {
+      if (!isCancelled) onCount(res.pagination?.total || 0)
+    })
+    .catch((err) => {
       if (!isCancelled && onError) onError(err)
-    }
-  }
-
-  fetchCount()
+    })
 
   return () => {
     isCancelled = true
   }
+}
+
+export const subscribeToPendingChangeRequests = subscribeToChangeRequests
+export const subscribeToPendingChangeRequestCount = subscribeToPendingCount
+
+export default {
+  getProfileChangeRequests,
+  getChangeRequestById,
+  reviewProfileChangeRequest,
+  approveChangeRequest,
+  rejectChangeRequest,
+  approveProfileChangeRequest,
+  rejectProfileChangeRequest,
+  subscribeToChangeRequests,
+  subscribeToPendingCount,
+  subscribeToPendingChangeRequests,
+  subscribeToPendingChangeRequestCount,
 }

@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Controller, useForm } from 'react-hook-form'
-import { CircleAlert, Loader2 } from 'lucide-react'
+import { CircleAlert, Loader2, UserCog } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useAuth } from '@/hooks/useAuth'
 import { getUserById, updateUser } from '@/services/userService'
-import { GENDER_OPTIONS } from '@/constants/profileOptions'
+
+const GENDER_OPTIONS = [
+  { value: 'MALE', label: 'Male' },
+  { value: 'FEMALE', label: 'Female' },
+  { value: 'OTHER', label: 'Other' },
+]
 
 export default function EditUser() {
-  const { currentAdmin } = useAuth()
   const { userId } = useParams()
   const navigate = useNavigate()
   const [submitError, setSubmitError] = useState(null)
@@ -25,15 +28,12 @@ export default function EditUser() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm({
-    resolver: zodResolver(userSchema),
     defaultValues: {
       name: '',
       email: '',
       phone: '',
-      gender: '',
-      role: 'user',
-      status: 'active',
-      isVerified: false,
+      gender: 'MALE',
+      city: '',
     },
   })
 
@@ -50,18 +50,16 @@ export default function EditUser() {
           return
         }
         reset({
-          name: user.name || user.fullName || '',
-          email: user.email || '',
-          phone: user.phone || user.phoneNumber || '',
-          gender: user.gender || '',
-          role: user.role || 'user',
-          status: user.status || 'active',
-          isVerified: Boolean(user.isVerified),
+          name: user.name !== '—' ? user.name : '',
+          email: user.email !== '—' ? user.email : '',
+          phone: user.phone !== '—' ? user.phone : '',
+          gender: user.gender || 'MALE',
+          city: user.city !== '—' ? user.city : '',
         })
       })
       .catch((error) => {
         if (!cancelled) {
-          setSubmitError(error.message || 'Could not load user.')
+          setSubmitError(error?.message || 'Could not load user.')
         }
       })
       .finally(() => {
@@ -76,10 +74,12 @@ export default function EditUser() {
   async function onSubmit(data) {
     setSubmitError(null)
     try {
-      await updateUser(userId, data, { admin: currentAdmin })
-      navigate('/users', { state: { successMessage: 'User updated successfully.' } })
+      await updateUser(userId, data)
+      navigate('/users', {
+        state: { successMessage: `User "${data.name}" updated successfully.` },
+      })
     } catch (error) {
-      setSubmitError(error.message || 'Could not update user. Please try again.')
+      setSubmitError(error?.message || 'Could not update user. Please try again.')
     }
   }
 
@@ -87,18 +87,21 @@ export default function EditUser() {
     <div className="space-y-4">
       <div>
         <h1 className="font-heading text-2xl font-semibold text-foreground">Edit User</h1>
-        <p className="text-sm text-muted-foreground">Update the user details and save your changes.</p>
+        <p className="text-sm text-muted-foreground">Update user details and contact info.</p>
       </div>
 
       <Card className="border-border/70 shadow-sm">
         <CardHeader>
-          <CardTitle className="font-heading text-lg text-foreground">User Details</CardTitle>
-          <CardDescription>Update the user's profile details below.</CardDescription>
+          <CardTitle className="flex items-center gap-2 font-heading text-lg text-foreground">
+            <UserCog className="size-5 text-primary" />
+            Edit User Profile
+          </CardTitle>
+          <CardDescription>Update name, email, phone number, gender, and city.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+            <div className="flex justify-center py-8">
+              <Loader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
@@ -114,13 +117,13 @@ export default function EditUser() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-user-name">Name *</Label>
-                  <Input id="edit-user-name" {...register('name', { required: 'Name is required.' })} />
+                  <Label htmlFor="edit-user-name">Full Name *</Label>
+                  <Input id="edit-user-name" {...register('name', { required: 'Full name is required.' })} />
                   {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-user-email">Email *</Label>
+                  <Label htmlFor="edit-user-email">Email Address *</Label>
                   <Input
                     id="edit-user-email"
                     type="email"
@@ -133,8 +136,8 @@ export default function EditUser() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-user-phone">Phone *</Label>
-                  <Input id="edit-user-phone" {...register('phone', { required: 'Phone is required.' })} />
+                  <Label htmlFor="edit-user-phone">Mobile Number *</Label>
+                  <Input id="edit-user-phone" {...register('phone', { required: 'Phone number is required.' })} />
                   {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
                 </div>
 
@@ -145,9 +148,9 @@ export default function EditUser() {
                     control={control}
                     rules={{ required: 'Gender is required.' }}
                     render={({ field }) => (
-                      <Select value={field.value || ''} onValueChange={field.onChange}>
+                      <Select value={field.value || 'MALE'} onValueChange={field.onChange}>
                         <SelectTrigger id="edit-user-gender">
-                          <SelectValue placeholder="Select…" />
+                          <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
                         <SelectContent>
                           {GENDER_OPTIONS.map((option) => (
@@ -168,7 +171,7 @@ export default function EditUser() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-2">
                 <Button type="submit" disabled={isSubmitting} className="gap-1.5">
                   {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
                   Save Changes

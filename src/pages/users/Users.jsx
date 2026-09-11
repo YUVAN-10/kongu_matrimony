@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, CircleAlert, Download, FileSpreadsheet, Plus } from 'lucide-react'
+import { CheckCircle2, CircleAlert, Download, FileSpreadsheet, Plus, RefreshCw, Ban } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import SearchBar from '@/components/users/SearchBar'
 import UserFilters from '@/components/users/UserFilters'
@@ -8,7 +8,6 @@ import UserTable from '@/components/users/UserTable'
 import BlockUserDialog from '@/components/users/BlockUserDialog'
 import UserDetails from '@/pages/users/UserDetails'
 import { useUsers } from '@/hooks/useUsers'
-import { useAuth } from '@/hooks/useAuth'
 import {
   blockUser,
   unblockUser,
@@ -17,7 +16,6 @@ import {
 } from '@/services/userService'
 
 export default function Users() {
-  const { currentAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { userId: routeUserId } = useParams()
@@ -28,7 +26,6 @@ export default function Users() {
     error,
     hasMore,
     totalCount,
-    isSearching,
     page,
     pageSize,
     setPageSize,
@@ -39,12 +36,15 @@ export default function Users() {
     filters,
     updateFilters,
     resetFilters,
-    sortBy,
-    setSortBy,
+    refetch,
   } = useUsers()
 
   const [blockTarget, setBlockTarget] = useState(null)
-  const successMessage = location.state?.successMessage
+  const [actionNotification, setActionNotification] = useState(
+    location.state?.successMessage
+      ? { text: location.state.successMessage, type: 'success' }
+      : null
+  )
 
   function openDetails(userId) {
     navigate(`/users/${userId}`)
@@ -54,22 +54,40 @@ export default function Users() {
     navigate('/users')
   }
 
-  async function handleBlockConfirm(reason) {
-    await blockUser(blockTarget.id, { reason, admin: currentAdmin })
+  async function handleBlockConfirm() {
+    if (!blockTarget) return
+    try {
+      await blockUser(blockTarget.id)
+      setActionNotification({
+        text: `User "${blockTarget.name}" has been blocked.`,
+        type: 'destructive',
+      })
+      refetch()
+    } catch (err) {
+      console.error('Failed to block user:', err)
+    }
   }
 
   async function handleUnblock(user) {
-    await unblockUser(user.id, { admin: currentAdmin })
+    if (!user) return
+    try {
+      await unblockUser(user.id)
+      setActionNotification({
+        text: `User "${user.name}" has been unblocked.`,
+        type: 'success',
+      })
+      refetch()
+    } catch (err) {
+      console.error('Failed to unblock user:', err)
+    }
   }
-
-
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-semibold text-foreground">Users</h1>
-          <p className="text-sm text-muted-foreground">Manage registered platform users.</p>
+          <p className="text-sm text-muted-foreground">Manage registered platform users and accounts.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -96,6 +114,15 @@ export default function Users() {
             <FileSpreadsheet className="size-4" aria-hidden="true" />
             Excel
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={refetch}
+            disabled={loading}
+          >
+            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
           <Button asChild size="sm" className="gap-1.5">
             <Link to="/users/add">
               <Plus className="size-4" aria-hidden="true" />
@@ -105,13 +132,35 @@ export default function Users() {
         </div>
       </div>
 
-      {successMessage && (
+      {actionNotification && (
         <div
           role="status"
-          className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/10 px-4 py-3 text-sm text-success"
+          className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm transition-all duration-300 ${
+            actionNotification.type === 'destructive'
+              ? 'border-destructive/30 bg-destructive/10 text-destructive'
+              : 'border-success/30 bg-success/10 text-success'
+          }`}
         >
-          <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <span>{successMessage}</span>
+          <div className="flex items-center gap-2 font-medium">
+            {actionNotification.type === 'destructive' ? (
+              <Ban className="size-4 shrink-0 text-destructive" aria-hidden="true" />
+            ) : (
+              <CheckCircle2 className="size-4 shrink-0 text-success" aria-hidden="true" />
+            )}
+            <span>{actionNotification.text}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setActionNotification(null)}
+            className={`h-6 px-2 text-xs hover:bg-opacity-20 ${
+              actionNotification.type === 'destructive'
+                ? 'text-destructive hover:bg-destructive/20'
+                : 'text-success hover:bg-success/20'
+            }`}
+          >
+            Dismiss
+          </Button>
         </div>
       )}
 
@@ -123,39 +172,24 @@ export default function Users() {
           className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <div>
-            {error?.indexUrl ? (
-              <>
-                <div>Couldn&apos;t load users due to a missing Firestore index.</div>
-                <div className="mt-1">
-                  <a
-                    href={error.indexUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline"
-                  >
-                    Create the required index in Firebase Console
-                  </a>
-                </div>
-              </>
-            ) : (
-              <span>Couldn&apos;t load users. Check your connection and try again.</span>
-            )}
+          <div className="flex-1">
+            <p className="font-medium">Couldn&apos;t load users</p>
+            <p className="text-xs">{error}</p>
           </div>
+          <Button variant="ghost" size="sm" onClick={refetch} className="h-7 text-xs text-destructive hover:bg-destructive/20">
+            Retry
+          </Button>
         </div>
       )}
 
       <UserTable
         users={users}
         loading={loading}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
         page={page}
         pageSize={pageSize}
         onPageSizeChange={setPageSize}
         hasMore={hasMore}
         totalCount={totalCount}
-        isSearching={isSearching}
         onNextPage={goToNextPage}
         onPreviousPage={goToPreviousPage}
         onView={openDetails}
@@ -168,6 +202,7 @@ export default function Users() {
         userId={routeUserId}
         open={Boolean(routeUserId)}
         onOpenChange={(open) => !open && closeDetails()}
+        onStatusChange={refetch}
       />
 
       <BlockUserDialog
@@ -176,8 +211,6 @@ export default function Users() {
         onOpenChange={(open) => !open && setBlockTarget(null)}
         onConfirm={handleBlockConfirm}
       />
-
-
     </div>
   )
 }
