@@ -6,9 +6,6 @@ import NewProfileFilters from '@/components/newProfileApprovals/NewProfileFilter
 import NewProfileTable from '@/components/newProfileApprovals/NewProfileTable'
 import { useNewProfileApprovals } from '@/hooks/useNewProfileApprovals'
 
-// Same debounced-search pattern as ProfileSearch.jsx, inlined since the
-// placeholder text (name / ID / phone / email / city / user ID) is specific
-// to this page.
 function NewProfileSearch({ value, onChange }) {
   const [localValue, setLocalValue] = useState(value)
   const onChangeRef = useRef(onChange)
@@ -39,7 +36,7 @@ function NewProfileSearch({ value, onChange }) {
       <Input
         value={localValue}
         onChange={(event) => setLocalValue(event.target.value)}
-        placeholder="Search by name, profile ID, phone, email, city, or user ID…"
+        placeholder="Search by name, ID, phone, email, city…"
         className="pl-9"
         aria-label="Search new profile submissions"
       />
@@ -86,25 +83,7 @@ export default function NewProfileApprovals() {
           className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <div>
-            {error?.indexUrl ? (
-              <>
-                <div>Couldn&apos;t load new profiles due to a missing Firestore index.</div>
-                <div className="mt-1">
-                  <a
-                    href={error.indexUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    Create the index in Firebase Console
-                  </a>
-                </div>
-              </>
-            ) : (
-              <span>Couldn&apos;t load new profiles. Check your connection and try again.</span>
-            )}
-          </div>
+          <span>{typeof error === 'string' ? error : error?.message || 'Couldn\'t load new profiles.'}</span>
         </div>
       )}
 
@@ -119,7 +98,10 @@ export default function NewProfileApprovals() {
         hasMore={hasMore}
         onNextPage={goToNextPage}
         onPreviousPage={goToPreviousPage}
-        onReview={(profileId) => navigate(`/profiles/new-approvals/${profileId}`)}
+        onReview={(profile) => {
+          const id = typeof profile === 'object' ? profile.id : profile
+          navigate(`/profiles/new-approvals/${id}`, { state: { profile } })
+        }}
       />
     </div>
   )

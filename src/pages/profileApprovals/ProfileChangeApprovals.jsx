@@ -85,25 +85,7 @@ export default function ProfileChangeApprovals() {
           className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <div>
-            {error?.indexUrl ? (
-              <>
-                <div>Couldn&apos;t load change requests due to a missing Firestore index.</div>
-                <div className="mt-1">
-                  <a
-                    href={error.indexUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    Create the index in Firebase Console
-                  </a>
-                </div>
-              </>
-            ) : (
-              <span>Couldn&apos;t load change requests. Check your connection and try again.</span>
-            )}
-          </div>
+          <span>{typeof error === 'string' ? error : error?.message || "Couldn't load change requests."}</span>
         </div>
       )}
 
@@ -118,7 +100,10 @@ export default function ProfileChangeApprovals() {
         hasMore={hasMore}
         onNextPage={goToNextPage}
         onPreviousPage={goToPreviousPage}
-        onReview={(requestId) => navigate(`/profiles/change-approvals/${requestId}`)}
+        onReview={(request) => {
+          const id = typeof request === 'object' ? request.id : request
+          navigate(`/profiles/change-approvals/${id}`, { state: { request } })
+        }}
       />
     </div>
   )

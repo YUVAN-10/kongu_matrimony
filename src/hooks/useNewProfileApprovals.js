@@ -1,49 +1,42 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
+  getNewProfileApprovals,
   subscribeToPendingNewProfiles,
   subscribeToPendingNewProfileCount,
 } from '@/services/newProfileApprovalService'
-import { useFirestoreCollection } from '@/hooks/useFirestoreCollection'
-import { calculateProfileCompletion } from '@/utils/profileCompletion'
-import { toDate } from '@/utils/helpers'
-import { subscribeWithRetry } from '@/utils/subscribeWithRetry'
 
 const DEFAULT_FILTERS = {
-  dateFrom: '',
-  dateTo: '',
-  gender: '',
-  city: '',
-  minCompletion: '',
+  status: 'PENDING',
 }
 
-/** Realtime pending count — used by the Sidebar badge (cheap, mounted everywhere) and the Dashboard card. */
 export function usePendingNewProfilesCount() {
   const [count, setCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = subscribeWithRetry(
-      subscribeToPendingNewProfileCount,
-      (value) => {
-        setCount(value)
-        setLoading(false)
-      },
-      () => setLoading(false)
-    )
-    return unsubscribe
+    let isCancelled = false
+    getNewProfileApprovals({ limit: 1, status: 'PENDING' })
+      .then((res) => {
+        if (!isCancelled) {
+          setCount(res.pagination?.total || 0)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) setLoading(false)
+      })
+
+    return () => {
+      isCancelled = true
+    }
   }, [])
 
   return { count, loading }
 }
 
-/**
- * Orchestrates the New Profile Approvals list: realtime pending_approval
- * profiles joined in-memory against users (for name/phone/email, since a
- * profile only stores its own userId), then filtered/searched/paginated
- * client-side — architecturally identical to useProfileChangeRequests.js.
- */
 export function useNewProfileApprovals() {
   const [profiles, setProfiles] = useState([])
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -52,90 +45,76 @@ export function useNewProfileApprovals() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
-  const users = useFirestoreCollection('users')
-
-  useEffect(() => {
+  const fetchProfiles = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const unsubscribe = subscribeWithRetry(
-      subscribeToPendingNewProfiles,
-      (data) => {
-        setProfiles(data)
-        setLoading(false)
-      },
-      (err) => {
-        setError(err)
-        setLoading(false)
-      }
-    )
-    return unsubscribe
-  }, [])
-
-  const usersById = useMemo(() => new Map(users.data.map((u) => [u.id, u])), [users.data])
-
-  const enrichedProfiles = useMemo(() => {
-    return profiles.map((profile) => {
-      const user = usersById.get(profile.userId)
-      return {
-        ...profile,
-        userName: user?.name || 'Unknown User',
-        userPhone: user?.phone || profile.personal?.mobileNumber || '',
-        userEmail: user?.email || profile.personal?.email || '',
-        completion: calculateProfileCompletion(profile),
-      }
-    })
-  }, [profiles, usersById])
+    try {
+      const res = await getNewProfileApprovals({
+        page,
+        limit: pageSize,
+        status: filters.status || 'PENDING',
+      })
+      setProfiles(res.profiles)
+      setPagination(res.pagination)
+    } catch (err) {
+      console.error('Failed to load new profile approvals:', err)
+      setError(err?.message || 'Could not load new profile approvals.')
+    } finally {
+      setLoading(false)
+    }
+  }, [page, pageSize, filters.status])
 
   useEffect(() => {
-    setPage(1)
-  }, [filters, searchTerm, pageSize])
+    fetchProfiles()
+  }, [fetchProfiles])
+
+  const enrichedProfiles = useMemo(() => {
+    return profiles.map((p) => {
+      const user = p.user || {}
+      return {
+        ...p,
+        userName: user.name || p.fullName || '—',
+        userPhone: user.mobile || user.phone || '—',
+        userEmail: user.email || '—',
+        completion: p.completion || 80,
+      }
+    })
+  }, [profiles])
 
   const filteredProfiles = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()
-    const minCompletion = filters.minCompletion ? Number(filters.minCompletion) : null
+    if (!term) return enrichedProfiles
 
-    return enrichedProfiles
-      .filter((p) => !filters.gender || p.personal?.gender === filters.gender)
-      .filter((p) => !filters.city?.trim() || (p.address?.city || '').toLowerCase() === filters.city.trim().toLowerCase())
-      .filter((p) => minCompletion === null || p.completion >= minCompletion)
-      .filter((p) => {
-        if (!filters.dateFrom && !filters.dateTo) return true
-        const date = toDate(p.system?.submittedAt)
-        if (!date) return false
-        if (filters.dateFrom && date < new Date(filters.dateFrom)) return false
-        if (filters.dateTo && date > new Date(`${filters.dateTo}T23:59:59.999`)) return false
-        return true
-      })
-      .filter((p) => {
-        if (!term) return true
-        return [p.personal?.fullName, p.id, p.userPhone, p.userEmail, p.address?.city, p.userId].some((field) =>
-          String(field || '').toLowerCase().includes(term)
-        )
-      })
-      .sort((a, b) => (toDate(b.system?.submittedAt)?.getTime() || 0) - (toDate(a.system?.submittedAt)?.getTime() || 0))
-  }, [enrichedProfiles, searchTerm, filters])
-
-  const hasMore = filteredProfiles.length > page * pageSize
-  const pageProfiles = filteredProfiles.slice((page - 1) * pageSize, page * pageSize)
+    return enrichedProfiles.filter((p) =>
+      [p.fullName, p.id, p.userName, p.userPhone, p.userEmail, p.city, p.userId].some((f) =>
+        String(f || '').toLowerCase().includes(term)
+      )
+    )
+  }, [enrichedProfiles, searchTerm])
 
   function updateFilters(patch) {
     setFilters((prev) => ({ ...prev, ...patch }))
+    setPage(1)
   }
+
   function resetFilters() {
     setFilters(DEFAULT_FILTERS)
     setSearchTerm('')
+    setPage(1)
   }
+
   function goToNextPage() {
-    if (hasMore) setPage((prev) => prev + 1)
+    if (page < pagination.totalPages) setPage((prev) => prev + 1)
   }
+
   function goToPreviousPage() {
-    setPage((prev) => Math.max(1, prev - 1))
+    if (page > 1) setPage((prev) => prev - 1)
   }
 
   return {
-    profiles: pageProfiles,
-    totalCount: filteredProfiles.length,
-    loading: loading || users.loading,
+    profiles: filteredProfiles,
+    totalCount: pagination.total,
+    loading,
     error,
     searchTerm,
     setSearchTerm,
@@ -145,8 +124,9 @@ export function useNewProfileApprovals() {
     page,
     pageSize,
     setPageSize,
-    hasMore,
+    hasMore: page < pagination.totalPages,
     goToNextPage,
     goToPreviousPage,
+    refetch: fetchProfiles,
   }
 }

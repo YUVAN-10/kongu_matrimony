@@ -9,10 +9,11 @@ export { getProfileById as getNewProfileById }
  * Query params: page, limit, status (default PENDING)
  */
 export async function getNewProfileApprovals({ page = 1, limit = 10, status = 'PENDING' } = {}) {
+  const normalizedStatus = (!status || status.toUpperCase() === 'ALL') ? undefined : status.toUpperCase()
   const response = await api.get('/admin/new-profile-approvals', {
     page,
     limit,
-    status: status.toUpperCase(),
+    status: normalizedStatus,
   })
   const data = response?.data || response
   return {
@@ -26,20 +27,29 @@ export async function getNewProfileApprovals({ page = 1, limit = 10, status = 'P
  * PATCH /api/admin/new-profile-approvals/:id/status
  * Body: { status: "APPROVED" | "REJECTED" }
  */
-export async function reviewNewProfileApproval(profileId, status) {
-  const normalizedStatus = status.toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED'
+export async function reviewNewProfileApproval(profileIdOrParams, status) {
+  const profileId =
+    typeof profileIdOrParams === 'object' && profileIdOrParams !== null
+      ? profileIdOrParams.profileId || profileIdOrParams.id
+      : profileIdOrParams
+  const finalStatus =
+    typeof profileIdOrParams === 'object' && profileIdOrParams !== null && profileIdOrParams.status
+      ? profileIdOrParams.status
+      : status
+  const normalizedStatus = String(finalStatus || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED'
+
   const response = await api.patch(`/admin/new-profile-approvals/${profileId}/status`, {
     status: normalizedStatus,
   })
   return response?.data || response
 }
 
-export async function approveNewProfile(profileId) {
-  return reviewNewProfileApproval(profileId, 'APPROVED')
+export async function approveNewProfile(profileIdOrParams) {
+  return reviewNewProfileApproval(profileIdOrParams, 'APPROVED')
 }
 
-export async function rejectNewProfile(profileId) {
-  return reviewNewProfileApproval(profileId, 'REJECTED')
+export async function rejectNewProfile(profileIdOrParams) {
+  return reviewNewProfileApproval(profileIdOrParams, 'REJECTED')
 }
 
 export function subscribeToPendingNewProfiles(onData, onError) {

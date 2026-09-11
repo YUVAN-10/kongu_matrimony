@@ -6,10 +6,11 @@ import api from '@/lib/api'
  * Query params: page, limit, status (default PENDING)
  */
 export async function getProfileChangeRequests({ page = 1, limit = 10, status = 'PENDING' } = {}) {
+  const normalizedStatus = (!status || status.toUpperCase() === 'ALL') ? undefined : status.toUpperCase()
   const response = await api.get('/admin/profile-change-requests', {
     page,
     limit,
-    status: status ? status.toUpperCase() : undefined,
+    status: normalizedStatus,
   })
   const data = response?.data || response
   return {
@@ -28,20 +29,29 @@ export async function getChangeRequestById(requestId) {
  * PATCH /api/admin/profile-change-requests/:id/status
  * Body: { status: "APPROVED" | "REJECTED" }
  */
-export async function reviewProfileChangeRequest(requestId, status) {
-  const normalizedStatus = status.toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED'
+export async function reviewProfileChangeRequest(requestIdOrParams, status) {
+  const requestId =
+    typeof requestIdOrParams === 'object' && requestIdOrParams !== null
+      ? requestIdOrParams.requestId || requestIdOrParams.id
+      : requestIdOrParams
+  const finalStatus =
+    typeof requestIdOrParams === 'object' && requestIdOrParams !== null && requestIdOrParams.status
+      ? requestIdOrParams.status
+      : status
+  const normalizedStatus = String(finalStatus || '').toUpperCase() === 'APPROVED' ? 'APPROVED' : 'REJECTED'
+
   const response = await api.patch(`/admin/profile-change-requests/${requestId}/status`, {
     status: normalizedStatus,
   })
   return response?.data || response
 }
 
-export async function approveChangeRequest(requestId) {
-  return reviewProfileChangeRequest(requestId, 'APPROVED')
+export async function approveChangeRequest(requestIdOrParams) {
+  return reviewProfileChangeRequest(requestIdOrParams, 'APPROVED')
 }
 
-export async function rejectChangeRequest(requestId) {
-  return reviewProfileChangeRequest(requestId, 'REJECTED')
+export async function rejectChangeRequest(requestIdOrParams) {
+  return reviewProfileChangeRequest(requestIdOrParams, 'REJECTED')
 }
 
 export const approveProfileChangeRequest = approveChangeRequest

@@ -64,7 +64,7 @@ export default function ChangeRequestTable({
                     <ChangeRequestStatusBadge status={request.status} />
                   </td>
                   <td className="px-4 py-3">
-                    <Button size="sm" onClick={() => onReview(request.id)} className="h-8 px-3 text-xs">
+                    <Button size="sm" onClick={() => onReview(request)} className="h-8 px-3 text-xs">
                       Review
                     </Button>
                   </td>

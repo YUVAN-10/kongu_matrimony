@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CircleAlert, UserRound } from 'lucide-react'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { CircleAlert, UserRound, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import ProfileSection from '@/components/profiles/ProfileSection'
@@ -8,11 +8,9 @@ import ProfileStatusBadge from '@/components/profiles/ProfileStatusBadge'
 import ProfileDetails from '@/components/profiles/ProfileDetails'
 import ApproveNewProfileDialog from '@/components/newProfileApprovals/ApproveNewProfileDialog'
 import RejectNewProfileDialog from '@/components/newProfileApprovals/RejectNewProfileDialog'
-import { getNewProfileById, approveNewProfile, rejectNewProfile } from '@/services/newProfileApprovalService'
+import { getNewProfileApprovals, approveNewProfile, rejectNewProfile } from '@/services/newProfileApprovalService'
 import { getUserById } from '@/services/userService'
-import { useAuth } from '@/hooks/useAuth'
 import { formatDate } from '@/utils/helpers'
-import { calculateProfileCompletion } from '@/utils/profileCompletion'
 
 function Row({ label, value }) {
   return (
@@ -26,11 +24,11 @@ function Row({ label, value }) {
 export default function NewProfileReview() {
   const { profileId } = useParams()
   const navigate = useNavigate()
-  const { currentAdmin } = useAuth()
+  const location = useLocation()
 
-  const [profile, setProfile] = useState(null)
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState(location.state?.profile || null)
+  const [user, setUser] = useState(location.state?.profile?.user || null)
+  const [loading, setLoading] = useState(!location.state?.profile)
   const [error, setError] = useState(null)
 
   const [approveOpen, setApproveOpen] = useState(false)
@@ -38,27 +36,42 @@ export default function NewProfileReview() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError(null)
 
-    getNewProfileById(profileId)
-      .then(async (data) => {
+    async function loadProfile() {
+      if (profile && user) {
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await getNewProfileApprovals({ page: 1, limit: 100 })
+        const found = res.profiles?.find((p) => p.id === profileId)
         if (cancelled) return
-        if (!data) {
-          setError('Profile not found.')
+
+        if (!found) {
+          setError('Profile not found in pending approvals.')
           return
         }
-        setProfile(data)
-        const userData = data.userId ? await getUserById(data.userId) : null
-        if (cancelled) return
-        setUser(userData)
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message || 'Could not load this profile.')
-      })
-      .finally(() => {
+
+        setProfile(found)
+        if (found.user) {
+          setUser(found.user)
+        } else if (found.userId) {
+          const u = await getUserById(found.userId).catch(() => null)
+          if (!cancelled && u) setUser(u)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(typeof err === 'string' ? err : err?.message || 'Could not load this profile.')
+        }
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    }
+
+    loadProfile()
 
     return () => {
       cancelled = true
@@ -66,19 +79,19 @@ export default function NewProfileReview() {
   }, [profileId])
 
   async function handleApprove() {
-    await approveNewProfile(profileId, { admin: currentAdmin })
-    navigate('/profiles/new-approvals', { state: { successMessage: 'Profile approved.' } })
+    await approveNewProfile(profileId)
+    navigate('/profiles/new-approvals', { state: { successMessage: 'Profile approved successfully.' } })
   }
 
-  async function handleReject(rejectionReason) {
-    await rejectNewProfile(profileId, { admin: currentAdmin, rejectionReason })
+  async function handleReject() {
+    await rejectNewProfile(profileId)
     navigate('/profiles/new-approvals', { state: { successMessage: 'Profile rejected.' } })
   }
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-24 w-full" />
+      <div className="space-y-4">
+        <Skeleton className="h-20 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
     )
@@ -86,39 +99,50 @@ export default function NewProfileReview() {
 
   if (error || !profile) {
     return (
-      <div
-        role="alert"
-        className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-      >
-        <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-        <span>{error || 'Profile not found.'}</span>
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/profiles/new-approvals')} className="gap-1.5">
+          <ArrowLeft className="size-4" />
+          Back to Approvals
+        </Button>
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{typeof error === 'string' ? error : error?.message || 'Profile not found.'}</span>
+        </div>
       </div>
     )
   }
 
-  const system = profile.system || {}
-  const isPending = system.status === 'pending_approval'
-  const completion = calculateProfileCompletion(profile)
+  const name = profile.fullName || profile.personal?.fullName || 'Unnamed Profile'
+  const photo = profile.profileImageUrl || profile.photos?.main?.url
+  const status = profile.approvalStatus || profile.status || 'PENDING'
+  const isPending = status === 'PENDING'
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
-          <div className="flex size-16 items-center justify-center overflow-hidden rounded-full bg-muted">
-            {profile.photos?.main?.url ? (
-              <img src={profile.photos.main.url} alt="" className="size-full object-cover" />
+          <Button variant="ghost" size="icon" onClick={() => navigate('/profiles/new-approvals')} className="size-8">
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div className="flex size-14 items-center justify-center overflow-hidden rounded-full bg-muted border border-border">
+            {photo ? (
+              <img src={photo} alt={name} className="size-full object-cover" />
             ) : (
               <UserRound className="size-7 text-muted-foreground" aria-hidden="true" />
             )}
           </div>
           <div>
             <h1 className="font-heading text-2xl font-semibold text-foreground">
-              {profile.personal?.fullName || 'Unnamed Profile'}
+              {name}
             </h1>
             <div className="mt-1 flex items-center gap-2">
-              <ProfileStatusBadge status={system.status} />
-              <span className="text-xs text-muted-foreground">{completion}% complete</span>
-              <span className="text-xs text-muted-foreground">Submitted {formatDate(system.submittedAt)}</span>
+              <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                {status}
+              </span>
+              <span className="text-xs text-muted-foreground">Submitted {formatDate(profile.createdAt)}</span>
             </div>
           </div>
         </div>
@@ -127,7 +151,7 @@ export default function NewProfileReview() {
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
-              className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="border-destructive/30 text-destructive hover:bg-destructive/10"
               onClick={() => setRejectOpen(true)}
             >
               Reject
@@ -137,25 +161,14 @@ export default function NewProfileReview() {
         )}
       </div>
 
-      {system.status === 'rejected' && system.rejectionReason && (
-        <div
-          role="alert"
-          className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-        >
-          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <span>Rejection reason: {system.rejectionReason}</span>
-        </div>
-      )}
-
-      <ProfileSection title="User Information">
-        <Row label="Name" value={user?.name} />
-        <Row label="Email" value={user?.email} />
-        <Row label="Phone" value={user?.phone} />
-        <Row label="Account Status" value={user?.status} />
-        <Row label="Created Date" value={formatDate(user?.createdAt)} />
+      <ProfileSection title="Registered User Information">
+        <Row label="Name" value={user?.name || profile.user?.name} />
+        <Row label="Email" value={user?.email || profile.user?.email} />
+        <Row label="Phone" value={user?.phone || user?.mobile || profile.user?.mobile} />
+        <Row label="Account Status" value={user?.status || profile.user?.status} />
         {profile.userId && (
           <Button asChild variant="outline" size="sm" className="mt-3 gap-1.5">
-            <Link to={`/users/${profile.userId}`}>View User</Link>
+            <Link to={`/users/${profile.userId}`}>View Full User Details</Link>
           </Button>
         )}
       </ProfileSection>

@@ -137,9 +137,18 @@ axiosInstance.interceptors.response.use(
     if (error.response) {
       const status = error.response.status
       const data = error.response.data
-      const message =
-        (typeof data === 'object' && (data?.message || data?.error)) ||
-        `Request failed with status ${status}`
+      let message = `Request failed with status ${status}`
+      if (typeof data === 'string') {
+        message = data
+      } else if (typeof data === 'object' && data !== null) {
+        if (typeof data.message === 'string' && data.message) {
+          message = data.message
+        } else if (typeof data.error === 'string' && data.error) {
+          message = data.error
+        } else if (typeof data.error === 'object' && data.error?.message) {
+          message = data.error.message
+        }
+      }
 
       // Handle 401 Unauthorized
       if (status === 401) {

@@ -10,135 +10,120 @@ function Row({ label, value }) {
   )
 }
 
-/**
- * Full read-only profile display — every section of the schema, current
- * values only. Shared by ViewProfile.jsx (the live/approved profile) and
- * NewProfileReview.jsx (a profile still pending its first approval), so the
- * two surfaces render identically instead of maintaining two copies.
- */
 export default function ProfileDetails({ profile }) {
-  const {
-    personal = {},
-    physical = {},
-    astrology = {},
-    education = {},
-    occupation = {},
-    family = {},
-    address = {},
-    communication = {},
-    lifestyle = {},
-    partnerPreference = {},
-    about = {},
-    photos = {},
-  } = profile || {}
+  const p = profile || {}
+  const personal = p.personal || {}
+  const physical = p.physical || {}
+  const astrology = p.astrology || {}
+  const education = p.education || {}
+  const occupation = p.occupation || {}
+  const family = p.family || {}
+  const address = p.address || {}
+  const lifestyle = p.lifestyle || {}
+  const partnerPreference = p.partnerPreference || {}
+  const user = p.user || {}
+
+  const gender = p.gender || personal.gender
+  const dob = p.dateOfBirth || personal.dob
+  const mobile = p.mobile || user.mobile || personal.mobileNumber
+  const email = p.email || user.email || personal.email
+  const maritalStatus = p.maritalStatus || personal.maritalStatus
+
+  const height = p.heightCm || physical.heightCm
+  const weight = p.weightKg || physical.weightKg
+  const bodyType = p.bodyType || physical.bodyType
+  const complexion = p.complexion || physical.complexion
+  const bloodGroup = p.bloodGroup || physical.bloodGroup
+
+  const star = p.star || astrology.star
+  const rasi = p.rasi || astrology.raasi
+  const koottam = p.koottam
+  const temple = p.kulaTheivaTemple
+  const dosham = p.hasDosham != null ? (p.hasDosham ? 'Yes' : 'No') : astrology.dosham
+
+  const eduQual = p.educationLevel || (typeof education === 'string' ? education : education.highestQualification)
+  const eduDetail = p.educationDetail || education.details || (typeof p.education === 'string' ? p.education : null)
+  const jobTitle = p.jobDetails || (typeof occupation === 'string' ? occupation : occupation.jobTitle) || p.occupation
+  const annualIncome = p.annualIncome || occupation.annualIncome
+
+  const fatherName = p.fatherName || family.fatherName
+  const motherName = p.motherName || family.motherName
+  const fatherOcc = p.fatherOccupation || family.fatherOccupation
+  const motherOcc = p.motherOccupation || family.motherOccupation
+
+  const city = p.city || address.city
+  const state = p.state || address.state
+  const country = p.country || address.country
+
+  const mainPhoto = p.profileImageUrl || p.photos?.main?.url
+  const coverPhoto = p.coverImageUrl
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <ProfileSection title="Personal">
-        <Row label="Gender" value={personal.gender} />
-        <Row label="Age" value={calculateAge(personal.dob)} />
-        <Row label="Date of Birth" value={formatDate(personal.dob)} />
-        <Row label="Mobile Number" value={personal.mobileNumber} />
-        <Row label="Alternate Phone" value={personal.alternatePhone} />
-        <Row label="Email" value={personal.email} />
-        <Row label="Marital Status" value={personal.maritalStatus} />
-        <Row label="Religion" value={personal.religion} />
-        <Row label="Mother Tongue" value={personal.motherTongue} />
+      <ProfileSection title="Personal Information">
+        <Row label="Full Name" value={p.fullName || personal.fullName} />
+        <Row label="Gender" value={gender} />
+        <Row label="Age" value={calculateAge(dob)} />
+        <Row label="Date of Birth" value={formatDate(dob)} />
+        <Row label="Mobile Number" value={mobile} />
+        <Row label="Email" value={email} />
+        <Row label="Marital Status" value={maritalStatus} />
       </ProfileSection>
 
-      <ProfileSection title="Physical">
-        <Row label="Height" value={physical.heightCm && `${physical.heightCm} cm`} />
-        <Row label="Weight" value={physical.weightKg && `${physical.weightKg} kg`} />
-        <Row label="Body Type" value={physical.bodyType} />
-        <Row label="Complexion" value={physical.complexion} />
-        <Row label="Blood Group" value={physical.bloodGroup} />
-        <Row label="Physically Challenged" value={physical.physicallyChallenged} />
+      <ProfileSection title="Physical Attributes">
+        <Row label="Height" value={height ? `${height} cm` : null} />
+        <Row label="Weight" value={weight ? `${weight} kg` : null} />
+        <Row label="Body Type" value={bodyType} />
+        <Row label="Complexion" value={complexion} />
+        <Row label="Blood Group" value={bloodGroup} />
       </ProfileSection>
 
-      <ProfileSection title="Astrology">
-        <Row label="Birth Time" value={astrology.birthTime} />
-        <Row label="Birth Place" value={astrology.birthPlace} />
-        <Row label="Star / Nakshatra" value={astrology.star} />
-        <Row label="Raasi / Moon Sign" value={astrology.raasi} />
-        <Row label="Gothra" value={astrology.gothra} />
-        <Row label="Dosham" value={astrology.dosham} />
+      <ProfileSection title="Horoscope & Astrology">
+        <Row label="Star / Nakshatra" value={star} />
+        <Row label="Raasi / Moon Sign" value={rasi} />
+        <Row label="Koottam" value={koottam} />
+        <Row label="Kula Theiva Temple" value={temple} />
+        <Row label="Dosham" value={dosham} />
       </ProfileSection>
 
-      <ProfileSection title="Education & Occupation">
-        <Row label="Highest Qualification" value={education.highestQualification} />
-        <Row label="Education Details" value={education.details} />
-        <Row label="Occupation" value={occupation.jobTitle} />
-        <Row label="Employed In" value={occupation.employedIn} />
-        <Row label="Organization" value={occupation.organization} />
-        <Row label="Monthly Income" value={occupation.monthlyIncome && formatCurrency(occupation.monthlyIncome)} />
-        <Row label="Annual Income" value={occupation.annualIncome && formatCurrency(occupation.annualIncome)} />
+      <ProfileSection title="Education & Career">
+        <Row label="Education Level" value={eduQual} />
+        <Row label="Education Details" value={eduDetail} />
+        <Row label="Occupation" value={jobTitle} />
+        <Row label="Annual Income" value={annualIncome ? formatCurrency(annualIncome) : null} />
       </ProfileSection>
 
-      <ProfileSection title="Family">
-        <Row label="Father's Name" value={family.fatherName} />
-        <Row label="Father's Occupation" value={family.fatherOccupation} />
-        <Row label="Mother's Name" value={family.motherName} />
-        <Row label="Mother's Occupation" value={family.motherOccupation} />
-        <Row label="Siblings" value={`${family.brothers || 0} brother(s), ${family.sisters || 0} sister(s)`} />
-        <Row label="Family Type" value={family.familyType} />
-        <Row label="Family Status" value={family.familyStatus} />
-        <Row
-          label="Family Monthly / Annual Income"
-          value={
-            family.familyMonthlyIncome &&
-            `${formatCurrency(family.familyMonthlyIncome)} / ${formatCurrency(family.familyAnnualIncome)}`
-          }
-        />
+      <ProfileSection title="Family Details">
+        <Row label="Father's Name" value={fatherName} />
+        <Row label="Father's Occupation" value={fatherOcc} />
+        <Row label="Mother's Name" value={motherName} />
+        <Row label="Mother's Occupation" value={motherOcc} />
+        <Row label="Brothers" value={p.brothersCount} />
+        <Row label="Sisters" value={p.sistersCount} />
       </ProfileSection>
 
-      <ProfileSection title="Address & Communication">
-        <Row label="Address" value={address.addressLine} />
-        <Row label="City" value={address.city} />
-        <Row label="District" value={address.district} />
-        <Row label="State" value={address.state} />
-        <Row label="Country" value={address.country} />
-        <Row label="Pincode" value={address.pincode} />
-        <Row label="Preferred Contact" value={communication.preferredContactMethod} />
-        <Row label="WhatsApp" value={communication.whatsappNumber} />
+      <ProfileSection title="Location & Contact">
+        <Row label="Address" value={p.address || address.addressLine} />
+        <Row label="City" value={city} />
+        <Row label="State" value={state} />
+        <Row label="Country" value={country} />
       </ProfileSection>
 
-      <ProfileSection title="Lifestyle">
-        <Row label="Diet" value={lifestyle.diet} />
-        <Row label="Smoking" value={lifestyle.smoking} />
-        <Row label="Drinking" value={lifestyle.drinking} />
-        <Row label="Hobbies" value={lifestyle.hobbies} />
-        <Row label="Interests" value={lifestyle.interests} />
-      </ProfileSection>
-
-      <ProfileSection title="Partner Preference">
-        <Row
-          label="Age Range"
-          value={partnerPreference.ageFrom && `${partnerPreference.ageFrom} - ${partnerPreference.ageTo || '—'} yrs`}
-        />
-        <Row label="Preferred Religion" value={partnerPreference.religion} />
-        <Row label="Preferred Education" value={partnerPreference.education} />
-        <Row label="Preferred Occupation" value={partnerPreference.occupation} />
-        <Row label="Preferred Location" value={partnerPreference.location} />
-        <Row label="Other Expectations" value={partnerPreference.expectations} />
-      </ProfileSection>
-
-      <ProfileSection title="About">
-        <Row label="About Me" value={about.aboutMe} />
-        <Row label="Expectations" value={about.expectations} />
-      </ProfileSection>
-
-      <ProfileSection title="Photos" className="lg:col-span-2">
-        <div className="flex flex-wrap gap-3">
-          {photos.main?.url && <img src={photos.main.url} alt="Main" className="size-24 rounded-lg object-cover" />}
-          {(photos.gallery || []).map((item, index) => (
-            <img
-              key={item.path || item.url || index}
-              src={item.url}
-              alt=""
-              className="size-24 rounded-lg object-cover"
-            />
-          ))}
-          {!photos.main?.url && (!photos.gallery || photos.gallery.length === 0) && (
+      <ProfileSection title="Photos & Documents" className="lg:col-span-2">
+        <div className="flex flex-wrap gap-4">
+          {mainPhoto ? (
+            <div>
+              <p className="mb-1 text-xs text-muted-foreground">Profile Photo</p>
+              <img src={mainPhoto} alt="Profile" className="size-28 rounded-lg object-cover border border-border" />
+            </div>
+          ) : null}
+          {coverPhoto ? (
+            <div>
+              <p className="mb-1 text-xs text-muted-foreground">Cover Photo</p>
+              <img src={coverPhoto} alt="Cover" className="h-28 w-44 rounded-lg object-cover border border-border" />
+            </div>
+          ) : null}
+          {!mainPhoto && !coverPhoto && (
             <p className="text-sm text-muted-foreground">No photos uploaded.</p>
           )}
         </div>
