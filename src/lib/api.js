@@ -32,7 +32,7 @@ export function setAuthToken(token, rememberMe = true) {
       sessionStorage.setItem(TOKEN_KEY, token)
       localStorage.removeItem(TOKEN_KEY)
     }
-  } catch {}
+  } catch { }
 }
 
 /**
@@ -42,7 +42,7 @@ export function clearAuthToken() {
   try {
     localStorage.removeItem(TOKEN_KEY)
     sessionStorage.removeItem(TOKEN_KEY)
-  } catch {}
+  } catch { }
 }
 
 /**
@@ -74,7 +74,7 @@ export function setStoredAdmin(admin, rememberMe = true) {
       sessionStorage.setItem(ADMIN_KEY, raw)
       localStorage.removeItem(ADMIN_KEY)
     }
-  } catch {}
+  } catch { }
 }
 
 /**
@@ -84,7 +84,7 @@ export function clearStoredAdmin() {
   try {
     localStorage.removeItem(ADMIN_KEY)
     sessionStorage.removeItem(ADMIN_KEY)
-  } catch {}
+  } catch { }
 }
 
 /**
