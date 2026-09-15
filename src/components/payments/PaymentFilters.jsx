@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useFirestoreCollection } from '@/hooks/useFirestoreCollection'
+import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans'
 import { PAYMENT_STATUS_OPTIONS, PAYMENT_METHOD_OPTIONS, GATEWAY_OPTIONS } from '@/constants/paymentOptions'
 
 function FilterSelect({ label, value, options, onChange, width = 'sm:w-40' }) {
@@ -32,8 +32,8 @@ function FilterSelect({ label, value, options, onChange, width = 'sm:w-40' }) {
 }
 
 export default function PaymentFilters({ searchTerm, onSearchChange, filters, onChange, onReset }) {
-  const { data: plans } = useFirestoreCollection('subscriptionPlans')
-  const planOptions = plans.map((plan) => ({ value: plan.id, label: plan.planName }))
+  const { plans } = useSubscriptionPlans()
+  const planOptions = plans.map((plan) => ({ value: plan.code || plan.id, label: plan.name || plan.planName }))
 
   return (
     <div className="space-y-3 rounded-xl border border-border/70 bg-white p-4">

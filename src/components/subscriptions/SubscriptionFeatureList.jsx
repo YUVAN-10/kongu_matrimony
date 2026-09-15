@@ -1,48 +1,138 @@
-import { CheckCircle2 } from 'lucide-react'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { SUBSCRIPTION_FEATURES } from '@/constants/subscriptionOptions'
+import { useState } from 'react'
+import { CheckCircle2, Plus, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { COMMON_PLAN_FEATURES } from '@/constants/subscriptionOptions'
 
 /**
- * Reusable feature selector — the same SUBSCRIPTION_FEATURES list drives
- * both the editable checkbox grid (Add/Edit forms) and the green-check
- * read-only display (View page, cards). `readOnly` switches between them;
- * in read-only mode, only enabled features are shown at all.
+ * Feature manager component supporting both string array editing (with custom input + presets)
+ * and read-only checklist display.
  */
-export default function SubscriptionFeatureList({ features, onChange, readOnly = false }) {
-  if (readOnly) {
-    const enabled = SUBSCRIPTION_FEATURES.filter((feature) => Boolean(features?.[feature.key]))
+export default function SubscriptionFeatureList({ features = [], onChange, readOnly = false }) {
+  const [newFeatureText, setNewFeatureText] = useState('')
 
-    if (enabled.length === 0) {
-      return <p className="text-sm text-muted-foreground">No features included.</p>
+  const featureList = Array.isArray(features)
+    ? features
+    : features && typeof features === 'object'
+      ? Object.entries(features)
+          .filter(([, v]) => Boolean(v))
+          .map(([k]) => k)
+      : []
+
+  if (readOnly) {
+    if (featureList.length === 0) {
+      return <p className="text-sm text-muted-foreground">No features specified for this plan.</p>
     }
 
     return (
       <ul className="space-y-2">
-        {enabled.map((feature) => (
-          <li key={feature.key} className="flex items-center gap-2 text-sm text-foreground">
+        {featureList.map((feature, idx) => (
+          <li key={idx} className="flex items-center gap-2 text-sm text-foreground">
             <CheckCircle2 className="size-4 shrink-0 text-success" aria-hidden="true" />
-            {feature.label}
+            <span>{feature}</span>
           </li>
         ))}
       </ul>
     )
   }
 
+  function handleAddFeature(text) {
+    const trimmed = text?.trim()
+    if (!trimmed) return
+    if (!featureList.includes(trimmed)) {
+      const next = [...featureList, trimmed]
+      onChange?.(next)
+    }
+    setNewFeatureText('')
+  }
+
+  function handleRemoveFeature(indexToRemove) {
+    const next = featureList.filter((_, idx) => idx !== indexToRemove)
+    onChange?.(next)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleAddFeature(newFeatureText)
+    }
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {SUBSCRIPTION_FEATURES.map((feature) => (
-        <label
-          key={feature.key}
-          className="flex items-center gap-2 rounded-lg border border-border/70 px-3 py-2 text-sm transition-colors hover:bg-muted/40"
+    <div className="space-y-4">
+      {/* Current Active Features */}
+      {featureList.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {featureList.map((feature, idx) => (
+            <Badge
+              key={idx}
+              variant="secondary"
+              className="flex items-center gap-1.5 py-1 px-2.5 text-sm font-normal bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            >
+              <span>{feature}</span>
+              <button
+                type="button"
+                onClick={() => handleRemoveFeature(idx)}
+                className="hover:text-destructive transition-colors focus:outline-none"
+                aria-label={`Remove feature ${feature}`}
+              >
+                <X className="size-3.5" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">No features added yet. Add custom features or pick from suggestions below.</p>
+      )}
+
+      {/* Input to Add Custom Feature */}
+      <div className="flex gap-2">
+        <Input
+          value={newFeatureText}
+          onChange={(e) => setNewFeatureText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type a feature (e.g. Unlimited Search, 100 Contacts) and press Enter"
+          className="text-sm"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => handleAddFeature(newFeatureText)}
+          disabled={!newFeatureText.trim()}
+          className="gap-1 shrink-0"
         >
-          <Checkbox
-            checked={Boolean(features?.[feature.key])}
-            onCheckedChange={(checked) => onChange(feature.key, Boolean(checked))}
-          />
-          <Label className="cursor-pointer font-normal">{feature.label}</Label>
-        </label>
-      ))}
+          <Plus className="size-4" />
+          Add
+        </Button>
+      </div>
+
+      {/* Common Suggestions */}
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-muted-foreground">Popular Suggestions (Click to add):</p>
+        <div className="flex flex-wrap gap-1.5">
+          {COMMON_PLAN_FEATURES.map((suggestion) => {
+            const isSelected = featureList.includes(suggestion)
+            return (
+              <button
+                key={suggestion}
+                type="button"
+                disabled={isSelected}
+                onClick={() => handleAddFeature(suggestion)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                  isSelected
+                    ? 'bg-muted/50 text-muted-foreground/60 border-transparent cursor-not-allowed'
+                    : 'bg-background hover:bg-primary/10 hover:text-primary border-border/80 text-foreground'
+                }`}
+              >
+                + {suggestion}
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
+

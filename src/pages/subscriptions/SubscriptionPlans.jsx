@@ -27,9 +27,11 @@ export default function SubscriptionPlans() {
     statusFilter,
     setStatusFilter,
     activeUserCounts,
+    refetch,
   } = useSubscriptionPlans()
 
   const [deactivateTarget, setDeactivateTarget] = useState(null)
+  const [actionError, setActionError] = useState(null)
 
   function goToView(planId) {
     navigate(`/subscription-plans/${planId}`)
@@ -38,10 +40,24 @@ export default function SubscriptionPlans() {
     navigate(`/subscription-plans/${planId}/edit`)
   }
   async function handleActivate(plan) {
-    await activatePlan(plan.id, { admin: currentAdmin })
+    setActionError(null)
+    try {
+      await activatePlan(plan.code || plan.id, { admin: currentAdmin })
+      await refetch()
+    } catch (err) {
+      setActionError(err.message || 'Could not activate plan.')
+    }
   }
   async function handleDeactivateConfirm() {
-    await deactivatePlan(deactivateTarget.id, { admin: currentAdmin })
+    if (!deactivateTarget) return
+    setActionError(null)
+    try {
+      await deactivatePlan(deactivateTarget.code || deactivateTarget.id, { admin: currentAdmin })
+      await refetch()
+      setDeactivateTarget(null)
+    } catch (err) {
+      setActionError(err.message || 'Could not deactivate plan.')
+    }
   }
 
 
@@ -86,6 +102,16 @@ export default function SubscriptionPlans() {
         >
           <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <span>Couldn&apos;t load subscription plans. Check your connection and try again.</span>
+        </div>
+      )}
+
+      {actionError && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{actionError}</span>
         </div>
       )}
 

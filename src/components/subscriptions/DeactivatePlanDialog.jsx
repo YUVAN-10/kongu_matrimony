@@ -29,7 +29,7 @@ export default function DeactivatePlanDialog({ plan, open, onOpenChange, onConfi
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="font-heading">
-            Deactivate {plan?.planName || 'this plan'}?
+            Deactivate {plan?.name || plan?.planName || plan?.code || 'this plan'}?
           </AlertDialogTitle>
           <AlertDialogDescription>
             Inactive plans can no longer be assigned to users, but the plan record and its

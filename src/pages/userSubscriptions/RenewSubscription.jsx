@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useFirestoreCollection } from '@/hooks/useFirestoreCollection'
+import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans'
 import { useAuth } from '@/hooks/useAuth'
 import { getSubscriptionById, renewSubscription, extendSubscription } from '@/services/userSubscriptionService'
 import { EXTENSION_OPTIONS } from '@/constants/userSubscriptionOptions'
@@ -33,9 +33,12 @@ export default function RenewSubscription() {
   const [selectedPlanId, setSelectedPlanId] = useState('')
   const [selectedDays, setSelectedDays] = useState(EXTENSION_OPTIONS[0].value)
 
-  const { data: plans } = useFirestoreCollection('subscriptionPlans')
-  const activePlans = useMemo(() => plans.filter((plan) => plan.status === 'active'), [plans])
-  const selectedPlan = activePlans.find((plan) => plan.id === selectedPlanId)
+  const { plans } = useSubscriptionPlans()
+  const activePlans = useMemo(
+    () => plans.filter((plan) => plan.isActive !== false && plan.status !== 'inactive'),
+    [plans]
+  )
+  const selectedPlan = activePlans.find((plan) => (plan.code || plan.id) === selectedPlanId)
 
   useEffect(() => {
     let cancelled = false

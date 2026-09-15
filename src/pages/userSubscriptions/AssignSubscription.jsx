@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useFirestoreCollection } from '@/hooks/useFirestoreCollection'
+import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans'
 import { useAuth } from '@/hooks/useAuth'
 import { searchUsersOnce } from '@/services/userService'
 import { getProfileByUserId } from '@/services/profileService'
@@ -127,8 +127,11 @@ export default function AssignSubscription() {
   const { currentAdmin } = useAuth()
   const navigate = useNavigate()
 
-  const { data: plans } = useFirestoreCollection('subscriptionPlans')
-  const activePlans = useMemo(() => plans.filter((plan) => plan.status === 'active'), [plans])
+  const { plans } = useSubscriptionPlans()
+  const activePlans = useMemo(
+    () => plans.filter((plan) => plan.isActive !== false && plan.status !== 'inactive'),
+    [plans]
+  )
 
   const [selectedUser, setSelectedUser] = useState(null)
   const [profile, setProfile] = useState(null)

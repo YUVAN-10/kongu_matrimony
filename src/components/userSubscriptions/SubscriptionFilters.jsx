@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useFirestoreCollection } from '@/hooks/useFirestoreCollection'
+import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans'
 import { SUBSCRIPTION_STATUS_OPTIONS, PAYMENT_STATUS_OPTIONS } from '@/constants/userSubscriptionOptions'
 
 function FilterSelect({ label, value, options, onChange, width = 'w-40' }) {
@@ -28,11 +28,8 @@ function FilterSelect({ label, value, options, onChange, width = 'w-40' }) {
 }
 
 export default function SubscriptionFilters({ searchTerm, onSearchChange, filters, onChange, onReset }) {
-  // Plan filter options come straight from Subscription Plans — that
-  // collection is small and already realtime-loaded elsewhere, so a plain
-  // fetch here is cheap and keeps this component self-contained.
-  const { data: plans } = useFirestoreCollection('subscriptionPlans')
-  const planOptions = plans.map((plan) => ({ value: plan.id, label: plan.planName }))
+  const { plans } = useSubscriptionPlans()
+  const planOptions = plans.map((plan) => ({ value: plan.code || plan.id, label: plan.name || plan.planName }))
 
   return (
     <div className="space-y-3 rounded-xl border border-border/70 bg-white p-4">

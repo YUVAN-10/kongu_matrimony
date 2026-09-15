@@ -1,41 +1,65 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useFirestoreCollection } from '@/hooks/useFirestoreCollection'
-import { getAssignedUserCount } from '@/services/subscriptionService'
-import { toDate } from '@/utils/helpers'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { getSubscriptionPlans, getAssignedUserCount } from '@/services/subscriptionService'
 
 /**
- * Subscription plans are admin-curated catalog data, not an unbounded,
- * user-generated collection like Users or Profiles — realistically a
- * handful to a few dozen documents. That changes the right architecture:
- * a single onSnapshot on the whole collection (reusing the same generic
- * hook the Dashboard uses) with search/filter/sort computed client-side,
- * rather than the cursor-pagination + capped-search-mode split used for
- * Users/Profiles. No pagination was requested here either.
+ * Custom hook to load and manage subscription plans via REST API.
  */
 export function useSubscriptionPlans() {
-  const { data: plans, loading, error } = useFirestoreCollection('subscriptionPlans')
+  const [plans, setPlans] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [activeUserCounts, setActiveUserCounts] = useState({})
 
-  // Assignment counts aren't part of the realtime plan snapshot (they live
-  // in a different collection), so they're fetched once per plan whenever
-  // the plan list changes — a reasonable refresh cadence for a secondary,
-  // non-critical metric rather than N extra realtime listeners.
+  const fetchPlans = useCallback(async (isMounted = true) => {
+    try {
+      if (isMounted) {
+        setLoading(true)
+        setError(null)
+      }
+      const data = await getSubscriptionPlans()
+      if (isMounted) {
+        setPlans(data || [])
+      }
+      return data
+    } catch (err) {
+      if (isMounted) {
+        setError(err)
+      }
+      return []
+    } finally {
+      if (isMounted) {
+        setLoading(false)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+    fetchPlans(mounted)
+    return () => {
+      mounted = false
+    }
+  }, [fetchPlans])
+
+  // Fetch assignment counts per plan
   useEffect(() => {
     if (plans.length === 0) {
       setActiveUserCounts({})
       return
     }
     let cancelled = false
-    Promise.all(plans.map((plan) => getAssignedUserCount(plan.id).then((count) => [plan.id, count])))
+    Promise.all(
+      plans.map((plan) =>
+        getAssignedUserCount(plan.code || plan.id).then((count) => [plan.code || plan.id, count])
+      )
+    )
       .then((entries) => {
         if (!cancelled) setActiveUserCounts(Object.fromEntries(entries))
       })
-      .catch(() => {
-        // Non-critical — the table just shows "—" if counts fail to load.
-      })
+      .catch(() => {})
     return () => {
       cancelled = true
     }
@@ -44,13 +68,24 @@ export function useSubscriptionPlans() {
   const filteredPlans = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()
     return plans
-      .filter((plan) => !statusFilter || plan.status === statusFilter)
-      .filter((plan) => !term || (plan.planName || '').toLowerCase().includes(term))
-      .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
+      .filter((plan) => {
+        if (!statusFilter) return true
+        if (statusFilter === 'active') return plan.isActive
+        if (statusFilter === 'inactive') return !plan.isActive
+        return plan.status === statusFilter
+      })
+      .filter((plan) => {
+        if (!term) return true
+        const name = (plan.name || plan.planName || '').toLowerCase()
+        const code = (plan.code || '').toLowerCase()
+        return name.includes(term) || code.includes(term)
+      })
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
   }, [plans, searchTerm, statusFilter])
 
   return {
     plans: filteredPlans,
+    rawPlans: plans,
     totalPlanCount: plans.length,
     loading,
     error,
@@ -59,5 +94,7 @@ export function useSubscriptionPlans() {
     statusFilter,
     setStatusFilter,
     activeUserCounts,
+    refetch: () => fetchPlans(true),
   }
 }
+

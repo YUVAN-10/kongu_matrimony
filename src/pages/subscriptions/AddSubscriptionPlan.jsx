@@ -5,7 +5,6 @@ import { CircleAlert, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import SubscriptionFeatureList from '@/components/subscriptions/SubscriptionFeatureList'
@@ -29,22 +28,28 @@ export default function AddSubscriptionPlan() {
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: preset || {
-      planName: '',
+      code: '',
+      name: '',
       price: '',
-      durationDays: '',
-      description: '',
+      validityDays: '',
+      searchResultLimit: '',
+      contactQuota: '',
+      photoLimit: 5,
+      sortOrder: 0,
       status: 'active',
-      features: {},
+      features: [],
     },
   })
 
-  const features = watch('features')
+  const features = watch('features') || []
 
   async function onSubmit(data) {
     setSubmitError(null)
     try {
-      await createSubscriptionPlan(data, { admin: currentAdmin })
-      navigate('/subscription-plans', { state: { successMessage: 'Plan created successfully.' } })
+      const createdCode = await createSubscriptionPlan(data, { admin: currentAdmin })
+      navigate('/subscription-plans', {
+        state: { successMessage: `Plan "${data.name || createdCode}" created successfully.` },
+      })
     } catch (error) {
       setSubmitError(error.message || 'Could not create plan. Please try again.')
     }
@@ -54,7 +59,7 @@ export default function AddSubscriptionPlan() {
     <div className="space-y-4">
       <div>
         <h1 className="font-heading text-2xl font-semibold text-foreground">Add Subscription Plan</h1>
-        <p className="text-sm text-muted-foreground">Only Plan Name, Price, and Duration are required.</p>
+        <p className="text-sm text-muted-foreground">Configure plan code, pricing, quotas, and feature tags.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
@@ -73,41 +78,115 @@ export default function AddSubscriptionPlan() {
             <CardTitle className="font-heading text-lg text-foreground">Plan Details</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="planName">Plan Name *</Label>
-              <Input id="planName" {...register('planName', { required: 'Plan name is required.' })} />
-              {errors.planName && <p className="text-xs text-destructive">{errors.planName.message}</p>}
+            <div className="space-y-1.5">
+              <Label htmlFor="code">Plan Code *</Label>
+              <Input
+                id="code"
+                placeholder="e.g. PLATINUM, GOLD_VIP, FREE"
+                {...register('code', {
+                  required: 'Plan code is required.',
+                  pattern: {
+                    value: /^[A-Za-z0-9_-]+$/,
+                    message: 'Code can only contain letters, numbers, hyphens, and underscores.',
+                  },
+                })}
+                onChange={(e) => {
+                  setValue('code', e.target.value.toUpperCase())
+                }}
+              />
+              {errors.code && <p className="text-xs text-destructive">{errors.code.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="price">Price (₹) *</Label>
+              <Label htmlFor="name">Plan Display Name *</Label>
+              <Input
+                id="name"
+                placeholder="e.g. Platinum VIP Plan"
+                {...register('name', { required: 'Plan name is required.' })}
+              />
+              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="price">Price (₹ INR) *</Label>
               <Input
                 id="price"
                 type="number"
-                step="0.01"
+                step="1"
+                min="0"
+                placeholder="e.g. 1999 (0 for Free)"
                 {...register('price', {
                   required: 'Price is required.',
                   valueAsNumber: true,
-                  min: { value: 0.01, message: 'Price must be greater than 0.' },
+                  min: { value: 0, message: 'Price cannot be negative.' },
                 })}
               />
               {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="durationDays">Duration (Days) *</Label>
+              <Label htmlFor="validityDays">Validity (Days) *</Label>
               <Input
-                id="durationDays"
+                id="validityDays"
                 type="number"
-                {...register('durationDays', {
-                  required: 'Duration is required.',
+                min="1"
+                placeholder="e.g. 90, 180, 365"
+                {...register('validityDays', {
+                  required: 'Validity in days is required.',
                   valueAsNumber: true,
-                  min: { value: 1, message: 'Duration must be greater than 0.' },
+                  min: { value: 1, message: 'Validity must be at least 1 day.' },
                 })}
               />
-              {errors.durationDays && (
-                <p className="text-xs text-destructive">{errors.durationDays.message}</p>
+              {errors.validityDays && (
+                <p className="text-xs text-destructive">{errors.validityDays.message}</p>
               )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="searchResultLimit">Search Result Limit</Label>
+              <Input
+                id="searchResultLimit"
+                type="number"
+                min="1"
+                placeholder="Leave blank for Unlimited"
+                {...register('searchResultLimit')}
+              />
+              <p className="text-xs text-muted-foreground">Max profiles in search results (Leave empty for Unlimited).</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="contactQuota">Contact Quota</Label>
+              <Input
+                id="contactQuota"
+                type="number"
+                min="0"
+                placeholder="Leave blank for Unlimited (0 for None)"
+                {...register('contactQuota')}
+              />
+              <p className="text-xs text-muted-foreground">Contact & horoscope reveals allowed (Leave empty for Unlimited).</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="photoLimit">Max Photo Uploads</Label>
+              <Input
+                id="photoLimit"
+                type="number"
+                min="1"
+                defaultValue={5}
+                {...register('photoLimit', { valueAsNumber: true })}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="sortOrder">Sort Order</Label>
+              <Input
+                id="sortOrder"
+                type="number"
+                min="0"
+                defaultValue={0}
+                placeholder="0, 1, 2..."
+                {...register('sortOrder', { valueAsNumber: true })}
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -131,22 +210,17 @@ export default function AddSubscriptionPlan() {
                 )}
               />
             </div>
-
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" rows={3} {...register('description')} />
-            </div>
           </CardContent>
         </Card>
 
         <Card className="border-border/70 shadow-sm">
           <CardHeader>
-            <CardTitle className="font-heading text-lg text-foreground">Features</CardTitle>
+            <CardTitle className="font-heading text-lg text-foreground">Plan Features & Badges</CardTitle>
           </CardHeader>
           <CardContent>
             <SubscriptionFeatureList
               features={features}
-              onChange={(key, checked) => setValue(`features.${key}`, checked, { shouldDirty: true })}
+              onChange={(nextList) => setValue('features', nextList, { shouldDirty: true })}
             />
           </CardContent>
         </Card>
@@ -164,3 +238,4 @@ export default function AddSubscriptionPlan() {
     </div>
   )
 }
+
