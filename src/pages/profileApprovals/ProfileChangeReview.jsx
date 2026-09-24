@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CircleAlert, UserRound, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -14,7 +14,7 @@ import {
   approveProfileChangeRequest,
   rejectProfileChangeRequest,
 } from '@/services/profileChangeRequestService'
-import { getProfileById } from '@/services/profileService'
+import { deleteProfileDraft } from '@/services/profileDraftService'
 import { useAuth } from '@/hooks/useAuth'
 import { formatDate } from '@/utils/helpers'
 import { REJECTION_TYPE_OPTIONS } from '@/constants/changeRequestOptions'
@@ -28,10 +28,8 @@ export default function ProfileChangeReview() {
   const { currentAdmin } = useAuth()
 
   const [request, setRequest] = useState(location.state?.request || null)
-  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(!location.state?.request)
-  const [error, setError] = useState(null)
-
+  const [error, setError] = useState(null)  
   const [approveOpen, setApproveOpen] = useState(false)
   const [rejectOpen, setRejectOpen] = useState(false)
 
@@ -81,7 +79,12 @@ export default function ProfileChangeReview() {
 
   async function handleApprove() {
     await approveProfileChangeRequest({ requestId, admin: currentAdmin })
-    navigate('/profiles/change-approvals', { state: { successMessage: 'Profile changes approved.' } })
+    if (request?.userId) {
+      await deleteProfileDraft(request.userId, { admin: currentAdmin }).catch(() => null)
+    }
+    navigate('/profiles/change-approvals', {
+      state: { successMessage: 'Profile changes approved and applied to live profile.' },
+    })
   }
 
   async function handleReject(rejectionType, rejectionReason) {

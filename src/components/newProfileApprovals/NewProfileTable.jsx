@@ -1,6 +1,5 @@
 import { UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import ProfileStatusBadge from '@/components/profiles/ProfileStatusBadge'
 import { formatDate } from '@/utils/helpers'
 
 const COLUMN_COUNT = 10
@@ -41,7 +40,7 @@ export default function NewProfileTable({ profiles, loading, page, hasMore, onNe
                 const photoUrl = profile.profileImageUrl || profile.photos?.main?.url || null
                 const name = profile.fullName || profile.personal?.fullName || 'Unnamed'
                 const user = profile.user || {}
-                const userName = user.name || profile.userName || '—'
+                const userName = user.fullName || user.name || profile.userName || '—'
                 const userContact = user.mobile || user.email || profile.userPhone || '—'
                 const city = profile.city || profile.address?.city || '—'
                 const gender = profile.gender || profile.personal?.gender || '—'

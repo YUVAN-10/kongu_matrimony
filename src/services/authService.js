@@ -55,23 +55,9 @@ export async function login(email, password, rememberMe = true) {
 /**
  * Logs out the admin user and clears authentication session.
  */
-export async function logout(admin) {
-  try {
-    if (admin) {
-      logActivity({
-        action: 'logout',
-        module: 'Authentication',
-        targetType: 'admin',
-        targetId: admin.id || admin.uid,
-        description: `${admin.name || admin.email} logged out`,
-        admin,
-      }).catch(() => {})
-    }
-    await api.post('/admin/auth/logout', {}).catch(() => {})
-  } finally {
-    clearAuthToken()
-    clearStoredAdmin()
-  }
+export function logout() {
+  clearAuthToken()
+  clearStoredAdmin()
 }
 
 /**

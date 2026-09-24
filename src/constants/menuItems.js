@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Users,
+  FileEdit,
   Gem,
   FileStack,
   CreditCard,

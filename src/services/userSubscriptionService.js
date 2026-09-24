@@ -21,7 +21,7 @@ export function subscribeToSubscriptions(onData, onError) {
 
   async function fetchSubscriptions() {
     try {
-      const response = await api.get('/user-subscriptions', { limit: 2000 })
+      const response = await api.get('/admin/user-subscriptions', { limit: 2000 })
       const list = Array.isArray(response)
         ? response
         : (response?.subscriptions || response?.data || [])
@@ -39,12 +39,12 @@ export function subscribeToSubscriptions(onData, onError) {
 }
 
 export async function getSubscriptionById(subscriptionId) {
-  const response = await api.get(`/user-subscriptions/${subscriptionId}`)
+  const response = await api.get(`/admin/user-subscriptions/${subscriptionId}`)
   return response?.subscription || response?.data || response
 }
 
 export async function getSubscriptionHistoryForUser(userId, excludeId) {
-  const response = await api.get('/user-subscriptions', { userId })
+  const response = await api.get('/admin/user-subscriptions', { userId })
   const list = Array.isArray(response) ? response : (response?.subscriptions || response?.data || [])
   return list
     .filter((sub) => sub.id !== excludeId && sub.subscriptionId !== excludeId)
@@ -53,7 +53,7 @@ export async function getSubscriptionHistoryForUser(userId, excludeId) {
 
 export async function hasActiveSubscription(userId) {
   try {
-    const response = await api.get('/user-subscriptions', { userId })
+    const response = await api.get('/admin/user-subscriptions', { userId })
     const list = Array.isArray(response) ? response : (response?.subscriptions || response?.data || [])
     return list.some((sub) => getEffectiveSubscriptionStatus(sub) === 'active')
   } catch {

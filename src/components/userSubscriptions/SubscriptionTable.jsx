@@ -89,7 +89,7 @@ export default function SubscriptionTable({ subscriptions, loading, onView, onRe
               subscriptions.map((sub) => (
                 <tr key={sub.id} className={cn('border-b border-border/60 last:border-0 hover:bg-muted/40', rowTint(sub))}>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{sub.user?.name || '—'}</p>
+                    <p className="font-medium text-foreground">{sub.user?.fullName || sub.user?.name || '—'}</p>
                     <p className="text-xs text-muted-foreground">{sub.user?.phone || sub.user?.email || ''}</p>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{sub.planName}</td>

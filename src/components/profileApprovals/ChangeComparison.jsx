@@ -1,9 +1,6 @@
 import { formatDate } from '@/utils/helpers'
+import HoroscopeChart from '@/components/profiles/HoroscopeChart'
 
-// Human labels for the known profile schema (see profiles/{profileId} — the
-// same dot-paths ViewProfile.jsx renders). Any path not listed here falls
-// back to a humanized version of its last segment, so a schema field added
-// later still displays reasonably instead of breaking this page.
 const FIELD_LABELS = {
   'personal.fullName': 'Full Name',
   'personal.gender': 'Gender',
@@ -24,8 +21,11 @@ const FIELD_LABELS = {
   'astrology.birthPlace': 'Birth Place',
   'astrology.star': 'Star / Nakshatra',
   'astrology.raasi': 'Raasi / Moon Sign',
-  'astrology.gothra': 'Gothra',
+  'astrology.gothra': 'Gothra / Koottam',
   'astrology.dosham': 'Dosham',
+  'astrology.rasiChart': 'Rasi Chart (இராசி கட்டம்)',
+  'astrology.amsamChart': 'Amsam Chart (அம்சகம் கட்டம்)',
+  'astrology.horoscopeChart': 'Horoscope Chart',
   'education.highestQualification': 'Highest Qualification',
   'education.details': 'Education Details',
   'occupation.jobTitle': 'Occupation',
@@ -51,6 +51,7 @@ const FIELD_LABELS = {
   'address.pincode': 'Pincode',
   'communication.preferredContactMethod': 'Preferred Contact',
   'communication.whatsappNumber': 'WhatsApp Number',
+  'communication.alternateEmail': 'Alternate Email',
   'lifestyle.diet': 'Diet',
   'lifestyle.smoking': 'Smoking',
   'lifestyle.drinking': 'Drinking',
@@ -79,6 +80,14 @@ function isPhotoField(path) {
   return path.startsWith('photos.')
 }
 
+function isChartField(path) {
+  return (
+    path.includes('rasiChart') ||
+    path.includes('amsamChart') ||
+    path.includes('horoscopeChart')
+  )
+}
+
 function PhotoValue({ value }) {
   if (!value) {
     return <span className="text-sm text-muted-foreground italic">None</span>
@@ -98,11 +107,22 @@ function PhotoValue({ value }) {
   )
 }
 
+function ChartValue({ value, title }) {
+  if (!value || typeof value !== 'object' || Object.keys(value).length === 0) {
+    return <span className="text-sm text-muted-foreground italic">Empty Chart</span>
+  }
+  return (
+    <div className="w-full max-w-sm scale-95 origin-top">
+      <HoroscopeChart value={value} readOnly title={title || 'கட்டம்'} />
+    </div>
+  )
+}
+
 function formatScalarValue(value) {
   if (value === null || value === undefined || value === '') return '—'
   if (typeof value === 'boolean') return value ? 'Yes' : 'No'
   if (value?.toDate) return formatDate(value)
-  if (typeof value === 'object') return JSON.stringify(value)
+  if (typeof value === 'object') return JSON.stringify(value, null, 2)
   return String(value)
 }
 
@@ -118,6 +138,7 @@ export default function ChangeComparison({ changes }) {
       {entries.map(([path, change]) => {
         const label = FIELD_LABELS[path] || humanizeFieldPath(path)
         const photo = isPhotoField(path)
+        const chart = isChartField(path)
 
         return (
           <div key={path} className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_2fr]">
@@ -127,6 +148,8 @@ export default function ChangeComparison({ changes }) {
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Current</p>
                 {photo ? (
                   <PhotoValue value={change?.oldValue} />
+                ) : chart ? (
+                  <ChartValue value={change?.oldValue} title="Current" />
                 ) : (
                   <p className="text-sm text-foreground">{formatScalarValue(change?.oldValue)}</p>
                 )}
@@ -135,6 +158,8 @@ export default function ChangeComparison({ changes }) {
                 <p className="text-xs font-medium tracking-wide text-primary uppercase">Requested</p>
                 {photo ? (
                   <PhotoValue value={change?.newValue} />
+                ) : chart ? (
+                  <ChartValue value={change?.newValue} title="Requested" />
                 ) : (
                   <p className="text-sm font-medium text-foreground">{formatScalarValue(change?.newValue)}</p>
                 )}

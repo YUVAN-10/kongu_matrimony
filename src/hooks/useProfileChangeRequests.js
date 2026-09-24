@@ -1,9 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import {
-  getProfileChangeRequests,
-  subscribeToChangeRequests,
-  subscribeToPendingCount,
-} from '@/services/profileChangeRequestService'
+import { getProfileChangeRequests } from '@/services/profileChangeRequestService'
 
 const DEFAULT_FILTERS = {
   status: 'PENDING',

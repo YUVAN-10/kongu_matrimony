@@ -266,7 +266,7 @@ export async function deactivatePlan(planCodeOrId, { admin } = {}) {
  */
 export async function getAssignedUserCount(planCodeOrId) {
   try {
-    const response = await api.get('/user-subscriptions', { planId: planCodeOrId, status: 'active' })
+    const response = await api.get('/admin/user-subscriptions', { planId: planCodeOrId, status: 'active' })
     const list = Array.isArray(response) ? response : response?.subscriptions || response?.data || []
     return list.length
   } catch {

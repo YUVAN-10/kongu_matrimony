@@ -13,17 +13,33 @@ export default function CommunicationStep() {
   return (
     <ProfileSection title="Communication">
       <StepGrid>
-        <SelectField
-          name="communication.preferredContactMethod"
-          label="Preferred Contact Method"
-          control={control}
-          options={CONTACT_METHOD_OPTIONS}
-        />
         <TextField
           name="communication.whatsappNumber"
           label="WhatsApp Number"
+          maxLength={10}
           register={register}
           errors={errors}
+          rules={{
+            pattern: {
+              value: /^[0-9]{10}$/,
+              message: 'Only 10 digits allowed.',
+            },
+          }}
+          placeholder="10-digit WhatsApp number"
+        />
+        <TextField
+          name="communication.alternateMobile"
+          label="Alternate Phone Number"
+          maxLength={10}
+          register={register}
+          errors={errors}
+          rules={{
+            pattern: {
+              value: /^[0-9]{10}$/,
+              message: 'Only 10 digits allowed.',
+            },
+          }}
+          placeholder="10-digit alternate phone number"
         />
         <TextField
           name="communication.alternateEmail"

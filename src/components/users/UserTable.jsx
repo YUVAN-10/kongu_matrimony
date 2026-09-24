@@ -106,7 +106,7 @@ export default function UserTable({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-medium text-foreground">{user.name || '—'}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{user.fullName || user.name || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{user.phone || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{user.email || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground capitalize">
@@ -126,7 +126,7 @@ export default function UserTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <UserStatusBadge status={user.status} />
+                    <UserStatusBadge status={user.status} profileStatus={user.profileStatus} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{formatDate(user.createdAt)}</td>
                   <td className="px-4 py-3">

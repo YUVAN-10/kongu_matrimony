@@ -1,53 +1,67 @@
 import { useRef, useState } from 'react'
-import { ImagePlus, Loader2, Trash2, Upload, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { uploadProfilePhoto, deleteProfilePhoto } from '@/services/storageService'
+import { ImagePlus, Loader2, Trash2, AlertCircle } from 'lucide-react'
+import { uploadProfilePhoto, deleteProfilePhoto, validatePhotoFile } from '@/services/storageService'
 
 /**
- * Reusable upload widget for both the single Main Profile Photo and the
- * multi-image Gallery — `multiple` toggles between the two. Selecting a
- * file shows a local preview (no network call yet); the admin then clicks
- * "Upload" to actually push it to Firebase Storage, or the X to discard it.
- * Already-uploaded photos get a hover-to-delete affordance.
+ * Reusable upload widget for both single Main Profile Photo and multi-image Gallery.
+ * Pre-validates files (formats: JPG, JPEG, PNG, WEBP; max size: 5MB),
+ * sends multipart/form-data via Axios API client, handles loading/error states,
+ * and updates parent profile state instantly.
  */
 export default function ProfilePhotoUpload({ profileId, folder, multiple = false, value, onChange, label }) {
   const inputRef = useRef(null)
-  const [pending, setPending] = useState([]) // [{ file, previewUrl }] — selected, not yet uploaded
   const [uploading, setUploading] = useState(false)
   const [deletingPath, setDeletingPath] = useState(null)
   const [error, setError] = useState(null)
 
-  const uploaded = multiple ? value || [] : value ? [value] : []
+  const rawUploaded = multiple ? (Array.isArray(value) ? value : value ? [value] : []) : (value ? [value] : [])
+  const uploaded = rawUploaded
+    .map((item) => {
+      if (!item) return null
+      if (typeof item === 'string') return { url: item, path: item }
+      if (typeof item === 'object') {
+        const url = item.url || item.downloadUrl || item.fileUrl || ''
+        const path = item.path || item.key || url
+        return url ? { url, path } : null
+      }
+      return null
+    })
+    .filter(Boolean)
 
-  function handleSelectFiles(fileList) {
+  async function handleSelectFiles(fileList) {
     const files = Array.from(fileList)
     if (files.length === 0) return
-    const next = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
-    setPending((prev) => (multiple ? [...prev, ...next] : next.slice(0, 1)))
-    if (inputRef.current) inputRef.current.value = ''
-  }
-
-  function cancelPending(previewUrl) {
-    setPending((prev) => prev.filter((item) => item.previewUrl !== previewUrl))
-    URL.revokeObjectURL(previewUrl)
-  }
-
-  async function confirmUpload() {
-    if (pending.length === 0) return
-    setUploading(true)
     setError(null)
+
+    // Pre-validate all selected files (format & size <= 5MB)
+    for (const file of files) {
+      try {
+        validatePhotoFile(file)
+      } catch (validationError) {
+        setError(validationError.message)
+        if (inputRef.current) inputRef.current.value = ''
+        return
+      }
+    }
+
+    setUploading(true)
+
     try {
       const results = []
-      for (const item of pending) {
-        results.push(await uploadProfilePhoto(profileId, item.file, folder))
-        URL.revokeObjectURL(item.previewUrl)
+      for (const file of files) {
+        const res = await uploadProfilePhoto(profileId, file, folder)
+        if (res && res.url) {
+          results.push(res)
+        }
       }
-      onChange(multiple ? [...uploaded, ...results] : results[0])
-      setPending([])
+      if (results.length > 0) {
+        onChange(multiple ? [...uploaded, ...results] : results[0])
+      }
     } catch (err) {
       setError(err.message || 'Upload failed. Please try again.')
     } finally {
       setUploading(false)
+      if (inputRef.current) inputRef.current.value = ''
     }
   }
 
@@ -55,8 +69,13 @@ export default function ProfilePhotoUpload({ profileId, folder, multiple = false
     setDeletingPath(item.path)
     setError(null)
     try {
-      await deleteProfilePhoto(item.path)
-      onChange(multiple ? uploaded.filter((photo) => photo.path !== item.path) : null)
+      if (item.path && item.path.includes('/')) {
+        await deleteProfilePhoto(item.path)
+      }
+      const nextUploaded = multiple
+        ? uploaded.filter((photo) => photo.url !== item.url && photo.path !== item.path)
+        : null
+      onChange(nextUploaded)
     } catch (err) {
       setError(err.message || 'Could not delete photo.')
     } finally {
@@ -69,17 +88,17 @@ export default function ProfilePhotoUpload({ profileId, folder, multiple = false
       {label && <p className="text-sm font-medium text-foreground">{label}</p>}
 
       <div className="flex flex-wrap gap-3">
-        {uploaded.map((item) => (
+        {uploaded.map((item, idx) => (
           <div
-            key={item.path}
-            className="group relative size-24 overflow-hidden rounded-lg border border-border/70"
+            key={item.path || idx}
+            className="group relative size-24 overflow-hidden rounded-lg border border-border/70 bg-muted/20"
           >
             <img src={item.url} alt="" className="size-full object-cover" />
             <button
               type="button"
               onClick={() => handleDeleteUploaded(item)}
               disabled={deletingPath === item.path}
-              className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-100"
+              className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-100 cursor-pointer"
               aria-label="Delete photo"
             >
               {deletingPath === item.path ? (
@@ -91,32 +110,18 @@ export default function ProfilePhotoUpload({ profileId, folder, multiple = false
           </div>
         ))}
 
-        {pending.map((item) => (
-          <div
-            key={item.previewUrl}
-            className="relative size-24 overflow-hidden rounded-lg border-2 border-dashed border-secondary"
-          >
-            <img src={item.previewUrl} alt="" className="size-full object-cover opacity-80" />
-            <button
-              type="button"
-              onClick={() => cancelPending(item.previewUrl)}
-              disabled={uploading}
-              className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-black/60 text-white"
-              aria-label="Remove selected photo"
-            >
-              <X className="size-3" aria-hidden="true" />
-            </button>
-            <span className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[10px] text-white">
-              Preview
-            </span>
+        {uploading && (
+          <div className="flex size-24 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary bg-primary/5 text-primary">
+            <Loader2 className="size-6 animate-spin" />
+            <span className="text-[10px] font-medium">Uploading...</span>
           </div>
-        ))}
+        )}
 
-        {(multiple || (uploaded.length === 0 && pending.length === 0)) && (
+        {(multiple || uploaded.length === 0) && !uploading && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex size-24 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+            className="flex size-24 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary cursor-pointer"
           >
             <ImagePlus className="size-5" aria-hidden="true" />
             <span className="text-[11px]">Add photo</span>
@@ -127,24 +132,18 @@ export default function ProfilePhotoUpload({ profileId, folder, multiple = false
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png,image/webp"
         multiple={multiple}
         onChange={(event) => handleSelectFiles(event.target.files)}
         className="hidden"
       />
 
-      {pending.length > 0 && (
-        <Button type="button" size="sm" onClick={confirmUpload} disabled={uploading} className="gap-1.5">
-          {uploading ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <Upload className="size-4" aria-hidden="true" />
-          )}
-          Upload {pending.length > 1 ? `${pending.length} photos` : 'photo'}
-        </Button>
+      {error && (
+        <div className="flex items-center gap-1.5 text-xs text-destructive mt-1 font-medium">
+          <AlertCircle className="size-3.5 shrink-0" />
+          <span>{error}</span>
+        </div>
       )}
-
-      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }

@@ -5,8 +5,37 @@ export function toDate(value) {
   if (!value) return null
   if (value instanceof Date) return value
   if (typeof value?.toDate === 'function') return value.toDate()
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+      const [d, m, y] = trimmed.split('/').map(Number)
+      return new Date(y, m - 1, d)
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [y, m, d] = trimmed.split('-').map(Number)
+      return new Date(y, m - 1, d)
+    }
+  }
   const parsed = new Date(value)
   return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+export function formatDateDDMMYYYY(value) {
+  const date = toDate(value)
+  if (!date) return '—'
+  const dd = String(date.getDate()).padStart(2, '0')
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const yyyy = date.getFullYear()
+  return `${dd}/${mm}/${yyyy}`
+}
+
+export function formatForDateInput(value) {
+  const date = toDate(value)
+  if (!date) return ''
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 function isSameDay(a, b) {

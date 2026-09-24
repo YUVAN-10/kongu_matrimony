@@ -27,6 +27,7 @@ import RefundPayment from '@/pages/payments/RefundPayment'
 import PrivacyPolicy from '@/pages/privacy/PrivacyPolicy'
 import DeleteAccount from '@/pages/privacy/DeleteAccount'
 
+
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
   const location = useLocation()
@@ -104,6 +105,7 @@ export default function AppRoutes() {
         <Route path="/users/add" element={<AddUser />} />
         <Route path="/users/:userId/edit" element={<EditUser />} />
         <Route path="/users/:userId" element={<Users />} />
+        <Route path="/profiles/drafts" element={<Navigate to="/users?tab=DRAFT" replace />} />
         <Route path="/profiles/new-approvals" element={<NewProfileApprovals />} />
         <Route path="/profiles/new-approvals/:profileId" element={<NewProfileReview />} />
         <Route path="/profiles/change-approvals" element={<ProfileChangeApprovals />} />
@@ -130,8 +132,7 @@ export default function AppRoutes() {
       
       {/* Redirections */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/profiles" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/profiles/drafts" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/profiles" element={<Navigate to="/users" replace />} />
       <Route path="/activity-logs" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

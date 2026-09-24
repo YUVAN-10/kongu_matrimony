@@ -28,8 +28,10 @@ export default function FamilyDetailsStep() {
         <TextField name="family.fatherOccupation" label="Father's Occupation" register={register} errors={errors} />
         <TextField name="family.motherName" label="Mother's Name" register={register} errors={errors} />
         <TextField name="family.motherOccupation" label="Mother's Occupation" register={register} errors={errors} />
-        <TextField name="family.brothers" label="Brothers" type="number" register={register} errors={errors} />
-        <TextField name="family.sisters" label="Sisters" type="number" register={register} errors={errors} />
+        <TextField name="family.brothersCount" label="Brothers" type="number" register={register} errors={errors} />
+        <TextField name="family.marriedBrothers" label="Married Brothers" type="number" register={register} errors={errors} />
+        <TextField name="family.sistersCount" label="Sisters" type="number" register={register} errors={errors} />
+        <TextField name="family.marriedSisters" label="Married Sisters" type="number" register={register} errors={errors} />
         <SelectField name="family.familyType" label="Family Type" control={control} options={FAMILY_TYPE_OPTIONS} />
         <SelectField
           name="family.familyStatus"
@@ -37,6 +39,7 @@ export default function FamilyDetailsStep() {
           control={control}
           options={FAMILY_STATUS_OPTIONS}
         />
+        <TextField name="family.familyValues" label="Family Values" register={register} errors={errors} />
         <TextField
           name="family.familyMonthlyIncome"
           label="Family Monthly Income"

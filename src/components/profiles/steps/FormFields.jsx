@@ -15,8 +15,12 @@ function fieldError(errors, name) {
   return name.split('.').reduce((acc, key) => acc?.[key], errors)
 }
 
-export function TextField({ name, label, register, errors, required, type = 'text', className, ...props }) {
+export function TextField({ name, label, register, errors, required, rules = {}, type = 'text', className, ...props }) {
   const error = fieldError(errors, name)
+  const validationRules = { ...rules }
+  if (required && !validationRules.required) {
+    validationRules.required = `${label} is required.`
+  }
   return (
     <div className={className || 'space-y-1.5'}>
       <Label htmlFor={name}>
@@ -25,50 +29,77 @@ export function TextField({ name, label, register, errors, required, type = 'tex
       <Input
         id={name}
         type={type}
+        lang={type === 'date' ? 'en-GB' : undefined}
         aria-invalid={Boolean(error)}
-        {...register(name, required ? { required: `${label} is required.` } : {})}
+        {...register(name, validationRules)}
         {...props}
       />
-      {error && <p className="text-xs text-destructive">{error.message}</p>}
+      {error && <p className="text-xs font-medium text-destructive">{error.message}</p>}
     </div>
   )
 }
 
-export function TextAreaField({ name, label, register, rows = 4, className }) {
+export function TextAreaField({ name, label, register, errors, required, rules = {}, rows = 4, className }) {
+  const error = fieldError(errors, name)
+  const validationRules = { ...rules }
+  if (required && !validationRules.required) {
+    validationRules.required = `${label} is required.`
+  }
   return (
     <div className={className || 'space-y-1.5 sm:col-span-2'}>
-      <Label htmlFor={name}>{label}</Label>
-      <Textarea id={name} rows={rows} {...register(name)} />
+      <Label htmlFor={name}>
+        {label} {required && <span className="text-destructive">*</span>}
+      </Label>
+      <Textarea id={name} rows={rows} aria-invalid={Boolean(error)} {...register(name, validationRules)} />
+      {error && <p className="text-xs font-medium text-destructive">{error.message}</p>}
     </div>
   )
 }
 
-export function SelectField({ name, label, control, options, placeholder = 'Select…', className }) {
+export function SelectField({ name, label, control, options, errors, required, rules = {}, placeholder = 'Select…', className }) {
+  const error = fieldError(errors, name)
+  const validationRules = { ...rules }
+  if (required && !validationRules.required) {
+    validationRules.required = `${label} is required.`
+  }
   return (
     <div className={className || 'space-y-1.5'}>
-      <Label htmlFor={name}>{label}</Label>
+      <Label htmlFor={name}>
+        {label} {required && <span className="text-destructive">*</span>}
+      </Label>
       <Controller
         name={name}
         control={control}
-        render={({ field }) => (
-          <Select value={field.value || ''} onValueChange={field.onChange}>
-            <SelectTrigger id={name}>
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => {
-                const value = typeof option === 'string' ? option : option.value
-                const label2 = typeof option === 'string' ? option : option.label
-                return (
-                  <SelectItem key={value} value={value}>
-                    {label2}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-        )}
+        rules={validationRules}
+        render={({ field }) => {
+          const val = field.value || ''
+          const optionValues = options.map((opt) => (typeof opt === 'string' ? opt : opt.value))
+          let displayOptions = options
+          if (val && !optionValues.includes(val)) {
+            displayOptions = [val, ...options]
+          }
+
+          return (
+            <Select value={val} onValueChange={field.onChange}>
+              <SelectTrigger id={name} aria-invalid={Boolean(error)}>
+                <SelectValue placeholder={placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {displayOptions.map((option) => {
+                  const value = typeof option === 'string' ? option : option.value
+                  const label2 = typeof option === 'string' ? option : option.label
+                  return (
+                    <SelectItem key={value} value={value}>
+                      {label2}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          )
+        }}
       />
+      {error && <p className="text-xs font-medium text-destructive">{error.message}</p>}
     </div>
   )
 }

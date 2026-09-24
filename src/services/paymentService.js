@@ -13,7 +13,7 @@ export function subscribeToPayments(onData, onError) {
 
   async function fetchPayments() {
     try {
-      const response = await api.get('/payments', { limit: 2000 })
+      const response = await api.get('/admin/payments', { limit: 2000 })
       const list = Array.isArray(response)
         ? response
         : (response?.payments || response?.data || [])
@@ -31,12 +31,12 @@ export function subscribeToPayments(onData, onError) {
 }
 
 export async function getPaymentById(paymentId) {
-  const response = await api.get(`/payments/${paymentId}`)
+  const response = await api.get(`/admin/payments/${paymentId}`)
   return response?.payment || response?.data || response
 }
 
 export async function getPaymentsForSubscription(subscriptionId) {
-  const response = await api.get('/payments', { subscriptionId })
+  const response = await api.get('/admin/payments', { subscriptionId })
   const list = Array.isArray(response) ? response : (response?.payments || response?.data || [])
   return list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
 }
@@ -97,7 +97,7 @@ export async function createPayment(data, { admin }) {
       paymentId,
       paymentStatus: 'paid',
       activate: true,
-    }).catch(() => {})
+    }).catch(() => { })
   }
 
   await logActivity({
@@ -137,7 +137,7 @@ export async function markPaymentSuccess(paymentId, { admin }) {
       paymentId,
       paymentStatus: 'paid',
       activate: true,
-    }).catch(() => {})
+    }).catch(() => { })
   }
 
   await logActivity({
@@ -263,7 +263,7 @@ export async function refundPayment(paymentId, { refundReason, refundDate, admin
       paymentId,
       paymentStatus: 'refunded',
       activate: false,
-    }).catch(() => {})
+    }).catch(() => { })
   }
 
   await logActivity({

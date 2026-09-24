@@ -32,10 +32,19 @@ export const DOSHAM_OPTIONS = ['None', 'Yes', 'Not Sure']
 
 export const EDUCATION_OPTIONS = [
   'High School',
-  "Bachelor's Degree",
-  "Master's Degree",
-  'Doctorate',
   'Diploma',
+  "Bachelor's Degree",
+  'B.E. / B.Tech',
+  'B.Sc',
+  'B.Com',
+  'B.A.',
+  'BBA / BCA',
+  "Master's Degree",
+  'M.E. / M.Tech',
+  'M.Sc',
+  'M.Com',
+  'MBA / MCA',
+  'Doctorate / Ph.D',
   'Other',
 ]
 
@@ -72,6 +81,7 @@ export const PROFILE_STEPS = [
   { key: 'personal', title: 'Personal Details' },
   { key: 'physical', title: 'Physical Details' },
   { key: 'astrology', title: 'Astrology' },
+  { key: 'horoscope', title: 'Horoscope Chart' },
   { key: 'education', title: 'Education & Occupation' },
   { key: 'family', title: 'Family Details' },
   { key: 'address', title: 'Address' },
@@ -84,27 +94,24 @@ export const PROFILE_STEPS = [
 ]
 
 /**
- * Every field across all 12 steps, explicitly defaulted to '' (or null/[]
+ * Every field across all steps, explicitly defaulted to '' (or null/[]
  * where that's the more correct empty value) instead of being left
- * undefined. Two reasons this matters, not just Firestore:
- *  - React warns/misbehaves when a controlled input's value flips from
- *    undefined to a string later (uncontrolled -> controlled).
- *  - It documents the full field set in one place — the actual source of
- *    the "80+ fields, only 3 mandatory" shape.
- * ProfileForm.jsx merges this under initialValues/linkedUser data, so
- * anything real always wins; this only fills genuine gaps.
+ * undefined. Normalized strictly to backend API contract field names.
  */
 export const DEFAULT_PROFILE_VALUES = {
   personal: {
     fullName: '',
     gender: '',
     dob: '',
-    mobileNumber: '',
-    alternatePhone: '',
+    dateOfBirth: '',
+    mobile: '',
+    alternateMobile: '',
     email: '',
-    maritalStatus: '',
     religion: '',
+    caste: '',
+    subsect: '',
     motherTongue: '',
+    maritalStatus: '',
   },
   physical: {
     heightCm: '',
@@ -112,27 +119,34 @@ export const DEFAULT_PROFILE_VALUES = {
     bodyType: '',
     complexion: '',
     bloodGroup: '',
-    physicallyChallenged: '',
-    physicallyChallengedDetails: '',
+    isPhysicallyChallenged: '',
+    disabilityDetails: '',
   },
   astrology: {
-    birthTime: '',
-    birthPlace: '',
+    timeOfBirth: '',
+    placeOfBirth: '',
     star: '',
+    rasi: '',
     raasi: '',
-    gothra: '',
-    dosham: '',
+    lakuna: '',
+    hasDosham: '',
+    gothram: '',
+    kulaTheivaTemple: '',
+    rasiChart: {},
+    amsamChart: {},
+    horoscopeChart: {},
   },
   education: {
-    highestQualification: '',
-    details: '',
+    education: '',
+    educationDetail: '',
   },
   occupation: {
-    jobTitle: '',
+    occupation: '',
+    currentCompany: '',
     employedIn: '',
-    organization: '',
     monthlyIncome: '',
     annualIncome: 0,
+    workLocation: '',
   },
   family: {
     fatherName: '',
@@ -140,32 +154,40 @@ export const DEFAULT_PROFILE_VALUES = {
     motherName: '',
     motherOccupation: '',
     brothers: '',
+    brothersCount: '',
+    marriedBrothers: '',
     sisters: '',
-    familyType: '',
+    sistersCount: '',
+    marriedSisters: '',
     familyStatus: '',
+    familyType: '',
+    familyValues: '',
     familyMonthlyIncome: '',
     familyAnnualIncome: 0,
   },
   address: {
-    addressLine: '',
+    address: '',
+    village: '',
     city: '',
     district: '',
     state: '',
     country: '',
-    pincode: '',
+    postalCode: '',
   },
   communication: {
     preferredContactMethod: '',
     whatsappNumber: '',
+    alternateMobile: '',
     alternateEmail: '',
     bestTimeToContact: '',
   },
   lifestyle: {
-    diet: '',
-    smoking: '',
-    drinking: '',
+    eatingHabits: '',
+    smokingHabits: '',
+    drinkingHabits: '',
     hobbies: '',
     interests: '',
+    spokenLanguages: '',
   },
   partnerPreference: {
     ageFrom: '',
@@ -173,17 +195,19 @@ export const DEFAULT_PROFILE_VALUES = {
     heightFrom: '',
     heightTo: '',
     religion: '',
+    caste: '',
     education: '',
     occupation: '',
-    location: '',
-    expectations: '',
+    prefCountry: '',
+    partnerExpectations: '',
   },
   about: {
-    aboutMe: '',
-    expectations: '',
+    bio: '',
+    aboutFamily: '',
+    partnerExpectations: '',
   },
   photos: {
-    main: null,
+    profileImageUrl: '',
     gallery: [],
   },
 }

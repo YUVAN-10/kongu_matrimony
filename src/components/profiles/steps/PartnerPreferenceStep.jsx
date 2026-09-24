@@ -40,6 +40,7 @@ export default function PartnerPreferenceStep() {
           errors={errors}
         />
         <TextField name="partnerPreference.religion" label="Preferred Religion" register={register} errors={errors} />
+        <TextField name="partnerPreference.caste" label="Preferred Caste" register={register} errors={errors} />
         <TextField
           name="partnerPreference.education"
           label="Preferred Education"
@@ -52,9 +53,9 @@ export default function PartnerPreferenceStep() {
           register={register}
           errors={errors}
         />
-        <TextField name="partnerPreference.location" label="Preferred Location" register={register} errors={errors} />
+        <TextField name="partnerPreference.prefCountry" label="Preferred Location" register={register} errors={errors} />
         <TextAreaField
-          name="partnerPreference.expectations"
+          name="partnerPreference.partnerExpectations"
           label="Other Expectations"
           register={register}
         />

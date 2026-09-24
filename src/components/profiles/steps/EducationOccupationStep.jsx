@@ -29,25 +29,25 @@ export default function EducationOccupationStep() {
       <ProfileSection title="Education">
         <StepGrid>
           <SelectField
-            name="education.highestQualification"
+            name="education.education"
             label="Highest Qualification"
             control={control}
             options={EDUCATION_OPTIONS}
           />
-          <TextField name="education.details" label="Education Details" register={register} errors={errors} />
+          <TextField name="education.educationDetail" label="Education Details" register={register} errors={errors} />
         </StepGrid>
       </ProfileSection>
 
       <ProfileSection title="Occupation">
         <StepGrid>
-          <TextField name="occupation.jobTitle" label="Occupation" register={register} errors={errors} />
+          <TextField name="occupation.occupation" label="Occupation" register={register} errors={errors} />
           <SelectField
             name="occupation.employedIn"
             label="Employed In"
             control={control}
             options={EMPLOYED_IN_OPTIONS}
           />
-          <TextField name="occupation.organization" label="Organization" register={register} errors={errors} />
+          <TextField name="occupation.currentCompany" label="Organization" register={register} errors={errors} />
           <TextField
             name="occupation.monthlyIncome"
             label="Monthly Income"
@@ -55,6 +55,7 @@ export default function EducationOccupationStep() {
             register={register}
             errors={errors}
           />
+          <TextField name="occupation.workLocation" label="Work Location" register={register} errors={errors} />
           <div className="space-y-1.5">
             <p className="text-sm leading-none font-medium">Annual Income (auto-calculated)</p>
             <p className="flex h-9 items-center rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground">

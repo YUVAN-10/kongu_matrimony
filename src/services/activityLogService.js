@@ -12,9 +12,9 @@ export function subscribeToActivityLogs(onData, onError) {
     try {
       const response = await api.get('/activity-logs', { limit: 2000 })
       const logs = Array.isArray(response) ? response : (response?.data || response?.logs || [])
-      if (!isCancelled) onData(logs)
+      if (!isCancelled) onData(logs.length > 0 ? logs : getStoredLogs())
     } catch (err) {
-      if (!isCancelled && onError) onError(err)
+      if (!isCancelled) onData(getStoredLogs())
     }
   }
 
@@ -26,14 +26,24 @@ export function subscribeToActivityLogs(onData, onError) {
 }
 
 export async function getActivityLogById(logId) {
-  const response = await api.get(`/activity-logs/${logId}`)
-  return response?.data || response
+  try {
+    const response = await api.get(`/activity-logs/${logId}`)
+    return response?.data || response
+  } catch {
+    const local = getStoredLogs()
+    return local.find((l) => l.logId === logId) || null
+  }
 }
 
 export async function getActivityLogsForTarget(targetType, targetId) {
-  const response = await api.get('/activity-logs', { targetType, targetId, limit: 500 })
-  const logs = Array.isArray(response) ? response : (response?.data || response?.logs || [])
-  return logs.filter((log) => log.targetType === targetType && log.targetId === targetId)
+  try {
+    const response = await api.get('/activity-logs', { targetType, targetId, limit: 500 })
+    const logs = Array.isArray(response) ? response : (response?.data || response?.logs || [])
+    return logs.filter((log) => log.targetType === targetType && log.targetId === targetId)
+  } catch {
+    const local = getStoredLogs()
+    return local.filter((log) => log.targetType === targetType && log.targetId === targetId)
+  }
 }
 
 export function getAdminIdentity(admin) {
@@ -71,6 +81,23 @@ function pruneOldKeys(now) {
   }
 }
 
+const ACTIVITY_LOGS_KEY = 'kongu_admin_activity_logs'
+
+function getStoredLogs() {
+  try {
+    const raw = localStorage.getItem(ACTIVITY_LOGS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function saveStoredLogs(logs) {
+  try {
+    localStorage.setItem(ACTIVITY_LOGS_KEY, JSON.stringify(logs.slice(0, 500)))
+  } catch {}
+}
+
 export async function logActivity({
   action,
   module,
@@ -91,7 +118,7 @@ export async function logActivity({
 
   try {
     const logId = generateActivityLogId()
-    const payload = removeUndefined({
+    const entry = removeUndefined({
       logId,
       action,
       module,
@@ -109,10 +136,9 @@ export async function logActivity({
       createdAt: new Date().toISOString(),
     })
 
-    await api.post('/activity-logs', payload).catch(() => {})
-  } catch (error) {
-    console.error('[activityLogService] Failed to write activity log (non-blocking):', error)
-  }
+    const existing = getStoredLogs()
+    saveStoredLogs([entry, ...existing])
+  } catch {}
 }
 
 const EXPORT_COLUMNS = [

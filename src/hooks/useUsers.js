@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { getUsers } from '@/services/userService'
 
 const DEFAULT_FILTERS = {
-  status: 'ALL',
+  status: 'ACTIVE',
 }
 
 export function useUsers() {
@@ -34,9 +34,27 @@ export function useUsers() {
         page,
         limit: pageSize,
         search: debouncedSearch,
-        status: filters.status,
+        status: filters.status === 'ALL' || filters.status === 'DRAFT' ? undefined : filters.status,
       })
-      setUsers(result.users)
+
+      let list = result.users || []
+      if (filters.status === 'DRAFT') {
+        list = list.filter(
+          (u) =>
+            u.profileStatus === 'DRAFT' ||
+            u.profile?.system?.status === 'draft' ||
+            u.profile?.status === 'draft'
+        )
+      } else if (filters.status === 'ACTIVE') {
+        list = list.filter(
+          (u) =>
+            u.profileStatus === 'ACTIVE' ||
+            u.profile?.system?.status === 'active' ||
+            u.status === 'ACTIVE'
+        )
+      }
+
+      setUsers(list)
       setPagination(result.pagination)
     } catch (err) {
       console.error('Failed to load users:', err)
@@ -48,6 +66,14 @@ export function useUsers() {
 
   useEffect(() => {
     fetchUsers()
+  }, [fetchUsers])
+
+  useEffect(() => {
+    function handleProfileUpdated() {
+      fetchUsers()
+    }
+    window.addEventListener('profile-updated', handleProfileUpdated)
+    return () => window.removeEventListener('profile-updated', handleProfileUpdated)
   }, [fetchUsers])
 
   function updateFilters(patch) {

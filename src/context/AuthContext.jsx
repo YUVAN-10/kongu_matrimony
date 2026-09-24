@@ -52,10 +52,10 @@ export function AuthProvider({ children }) {
     return admin
   }, [])
 
-  const handleLogout = useCallback(async () => {
-    await apiLogout(currentAdmin)
+  const handleLogout = useCallback(() => {
+    apiLogout()
     setCurrentAdmin(null)
-  }, [currentAdmin])
+  }, [])
 
   const refreshAdmin = useCallback(async () => {
     const admin = await getAdminProfile()

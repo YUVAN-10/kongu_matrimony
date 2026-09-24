@@ -13,13 +13,14 @@ export default function LifestyleStep() {
   return (
     <ProfileSection title="Lifestyle">
       <StepGrid>
-        <SelectField name="lifestyle.diet" label="Diet" control={control} options={DIET_OPTIONS} />
-        <SelectField name="lifestyle.smoking" label="Smoking" control={control} options={HABIT_OPTIONS} />
-        <SelectField name="lifestyle.drinking" label="Drinking" control={control} options={HABIT_OPTIONS} />
+        <SelectField name="lifestyle.eatingHabits" label="Diet" control={control} options={DIET_OPTIONS} />
+        <SelectField name="lifestyle.smokingHabits" label="Smoking" control={control} options={HABIT_OPTIONS} />
+        <SelectField name="lifestyle.drinkingHabits" label="Drinking" control={control} options={HABIT_OPTIONS} />
         <TextField name="lifestyle.hobbies" label="Hobbies" register={register} errors={errors} />
+        <TextField name="lifestyle.interests" label="Interests" register={register} errors={errors} />
         <TextField
-          name="lifestyle.interests"
-          label="Interests"
+          name="lifestyle.spokenLanguages"
+          label="Languages Known"
           register={register}
           errors={errors}
           className="space-y-1.5 sm:col-span-2"

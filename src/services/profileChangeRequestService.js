@@ -12,16 +12,46 @@ export async function getProfileChangeRequests({ page = 1, limit = 10, status = 
     limit,
     status: normalizedStatus,
   })
-  const data = response?.data || response
+  const rawList = data?.requests || []
+  // Rule: Only client pending requests are listed in Profile Change Approvals (hide admin direct requests)
+  const clientRequests = rawList.filter((r) => {
+    if (r.requestedBy === 'ADMIN' || r.actor === 'ADMIN' || r.source === 'ADMIN_PANEL') {
+      return false
+    }
+    return true
+  })
+
   return {
-    requests: data?.requests || [],
-    pagination: data?.pagination || { page, limit, total: 0, totalPages: 1 },
+    requests: clientRequests,
+    pagination: data?.pagination || { page, limit, total: clientRequests.length, totalPages: 1 },
   }
 }
 
 export async function getChangeRequestById(requestId) {
   const response = await api.get(`/admin/profile-change-requests/${requestId}`)
   return response?.data || response?.request || response
+}
+
+export async function createProfileChangeRequest(paramsOrUserId, changesParam) {
+  let userId, changes, newProfileData
+  if (typeof paramsOrUserId === 'object' && paramsOrUserId !== null) {
+    userId = paramsOrUserId.userId || paramsOrUserId.profileId || paramsOrUserId.id
+    changes = paramsOrUserId.changes
+    newProfileData = paramsOrUserId.newProfileData
+  } else {
+    userId = paramsOrUserId
+    changes = changesParam
+  }
+
+  const payload = {
+    userId,
+    profileId: userId,
+    changes: changes || {},
+    ...(newProfileData ? { newProfileData } : {}),
+  }
+
+  const response = await api.post('/admin/profile-change-requests', payload)
+  return response?.data || response
 }
 
 /**

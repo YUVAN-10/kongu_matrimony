@@ -1,7 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { subscribeToNewProfileSubmissions, subscribeToNewClientPayments } from '@/services/notificationService'
-import { subscribeWithRetry } from '@/utils/subscribeWithRetry'
-import { formatCurrency } from '@/utils/helpers'
+import { createContext, useContext, useState } from 'react'
 
 const NotificationContext = createContext(undefined)
 
@@ -26,43 +23,6 @@ export function NotificationProvider({ children }) {
     }, TOAST_DURATION_MS)
   }
 
-  useEffect(() => {
-    const unsubscribeProfiles = subscribeWithRetry(
-      subscribeToNewProfileSubmissions,
-      (profile) => {
-        pushNotification({
-          id: `profile-${profile.id}-${Date.now()}`,
-          type: 'new_profile',
-          title: 'New Profile Submitted',
-          description: `${profile.personal?.fullName || 'A client'} submitted a new profile for approval.`,
-          link: `/profiles/new-approvals/${profile.id}`,
-          createdAt: new Date(),
-        })
-      },
-      () => {}
-    )
-
-    const unsubscribePayments = subscribeWithRetry(
-      subscribeToNewClientPayments,
-      (payment) => {
-        pushNotification({
-          id: `payment-${payment.id}-${Date.now()}`,
-          type: 'new_payment',
-          title: 'New Payment Received',
-          description: `A payment of ${formatCurrency(payment.amount)} was received from a client.`,
-          link: `/payments/${payment.id}`,
-          createdAt: new Date(),
-        })
-      },
-      () => {}
-    )
-
-    return () => {
-      unsubscribeProfiles()
-      unsubscribePayments()
-    }
-  }, [])
-
   function markAllRead() {
     setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })))
   }
@@ -79,7 +39,7 @@ export function NotificationProvider({ children }) {
 
   const unreadCount = notifications.filter((notification) => !notification.read).length
 
-  const value = { notifications, unreadCount, toasts, markAllRead, markRead, dismissToast }
+  const value = { notifications, unreadCount, toasts, markAllRead, markRead, dismissToast, pushNotification }
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>
 }

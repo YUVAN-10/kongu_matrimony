@@ -64,7 +64,7 @@ export default function PaymentTable({ payments, loading, onView, onMarkSuccess,
                     {payment.transactionId || '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{payment.user?.name || '—'}</p>
+                    <p className="font-medium text-foreground">{payment.user?.fullName || payment.user?.name || '—'}</p>
                     <p className="text-xs text-muted-foreground">{payment.user?.phone || payment.user?.email || ''}</p>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{payment.planName}</td>
